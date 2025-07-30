@@ -12,6 +12,7 @@ const reviewRoutes = require('./routes/reviews');
 const sandboxRoutes = require('./routes/sandbox');
 const adminRoutes = require('./routes/admin');
 const aiRoutes = require('./routes/ai');
+const paymentRoutes = require('./routes/payments');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -91,6 +92,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/sandbox', sandboxRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/payments', paymentRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Vibe Marketplace API is running!' });

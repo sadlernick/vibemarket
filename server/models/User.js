@@ -69,6 +69,24 @@ const userSchema = new mongoose.Schema({
   stripeCustomerId: {
     type: String,
     default: null
+  },
+  stripeAccountId: {
+    type: String,
+    default: null
+  },
+  stripeAccountStatus: {
+    detailsSubmitted: {
+      type: Boolean,
+      default: false
+    },
+    chargesEnabled: {
+      type: Boolean,
+      default: false
+    },
+    payoutsEnabled: {
+      type: Boolean,
+      default: false
+    }
   }
 }, {
   timestamps: true
