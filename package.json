@@ -1,20 +1,28 @@
 {
-  "name": "vibe-marketplace",
+  "name": "pack-code",
   "version": "1.0.0",
-  "description": "A marketplace for vibe coders to share, run, and license their projects",
+  "description": "PackCode - The marketplace for vibe coders. Build together as a pack.",
   "main": "server.js",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "node server/index.js",
     "client": "cd client && npm start",
     "build": "cd client && npm run build",
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "test": "NODE_ENV=test jest --testPathPattern=server/tests --setupFilesAfterEnv=./server/tests/setup.js",
+    "test:watch": "NODE_ENV=test jest --testPathPattern=server/tests --setupFilesAfterEnv=./server/tests/setup.js --watch",
+    "test:coverage": "NODE_ENV=test jest --testPathPattern=server/tests --setupFilesAfterEnv=./server/tests/setup.js --coverage",
+    "test:client": "cd client && npm test",
+    "test:all": "npm test && npm run test:client"
   },
   "keywords": [
     "marketplace",
     "coding",
     "projects",
-    "licensing"
+    "licensing",
+    "pack",
+    "vibe coders",
+    "developer community"
   ],
   "author": "",
   "license": "MIT",
@@ -29,14 +37,18 @@
     "mongodb": "^6.18.0",
     "mongoose": "^7.5.0",
     "multer": "^2.0.2",
-    "openai": "^5.10.2",
+    "openai": "^5.11.0",
     "passport": "^0.7.0",
     "passport-apple": "^2.0.2",
     "passport-google-oauth20": "^2.0.0",
     "stripe": "^13.11.0"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/supertest": "^6.0.3",
     "concurrently": "^8.2.0",
-    "nodemon": "^3.0.1"
+    "jest": "^30.0.5",
+    "nodemon": "^3.0.1",
+    "supertest": "^7.1.4"
   }
 }

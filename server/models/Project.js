@@ -69,6 +69,11 @@ const projectSchema = new mongoose.Schema({
       default: 0,
       min: 0
     },
+    sellerPrice: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
     marketplaceFeePct: {
       type: Number,
       default: 20,
@@ -131,6 +136,11 @@ const projectSchema = new mongoose.Schema({
   isFeatured: {
     type: Boolean,
     default: false
+  },
+  status: {
+    type: String,
+    enum: ['draft', 'published'],
+    default: 'published'
   }
 }, {
   timestamps: true

@@ -13,6 +13,8 @@ const sandboxRoutes = require('./routes/sandbox');
 const adminRoutes = require('./routes/admin');
 const aiRoutes = require('./routes/ai');
 const paymentRoutes = require('./routes/payments');
+const dashboardRoutes = require('./routes/dashboard');
+const toolsRoutes = require('./routes/tools');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -86,16 +88,19 @@ app.get('/auth/apple', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api', authRoutes); // For /users/:id route
 app.use('/api/projects', projectRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/licenses', licenseRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/sandbox', sandboxRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/tools', toolsRoutes);
 
 app.get('/api/health', (req, res) => {
-  res.json({ message: 'Vibe Marketplace API is running!' });
+  res.json({ message: 'PackCode API is running!' });
 });
 
 app.listen(PORT, () => {

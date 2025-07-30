@@ -1,7 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, optionalAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -146,6 +146,30 @@ router.put('/profile', authenticateToken, async (req, res) => {
       }
     });
   } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get user profile by ID (public route for author pages)
+router.get('/users/:id', optionalAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password -email');
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      _id: user._id,
+      username: user.username,
+      reputation: user.reputation,
+      createdAt: user.createdAt,
+      githubProfile: user.githubProfile,
+      website: user.website,
+      profileImage: user.profileImage
+    });
+  } catch (error) {
+    console.error('Get user profile error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
