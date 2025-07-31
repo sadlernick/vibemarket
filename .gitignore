@@ -104,3 +104,4 @@ uploads/
 # Log files
 *.log
 server.logclient/mongodb*
+.vercel
