@@ -77,21 +77,22 @@ async function connectToDatabase() {
     }
 }
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/projects', projectRoutes);
-app.use('/api/licenses', licenseRoutes);
-app.use('/api/reviews', reviewRoutes);
-app.use('/api/sandbox', sandboxRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/tools', toolsRoutes);
-app.use('/api/github', githubRoutes);
-app.use('/api/verification', verificationRoutes);
+// Routes - Note: Vercel routes to /api/* so we don't need /api prefix here
+app.use('/auth', authRoutes);
+app.use('/', authRoutes); // For /users/:id route
+app.use('/projects', projectRoutes);
+app.use('/licenses', licenseRoutes);
+app.use('/reviews', reviewRoutes);
+app.use('/sandbox', sandboxRoutes);
+app.use('/admin', adminRoutes);
+app.use('/ai', aiRoutes);
+app.use('/payments', paymentRoutes);
+app.use('/dashboard', dashboardRoutes);
+app.use('/tools', toolsRoutes);
+app.use('/github', githubRoutes);
+app.use('/verification', verificationRoutes);
 
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
     res.json({ 
         status: 'ok', 
         timestamp: new Date().toISOString(),
@@ -100,7 +101,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Root route
-app.get('/api', (req, res) => {
+app.get('/', (req, res) => {
     res.json({ message: 'PackCode API is running!' });
 });
 
@@ -115,6 +116,14 @@ app.use((err, req, res, next) => {
 
 // For Vercel serverless functions
 module.exports = async (req, res) => {
-    await connectToDatabase();
-    return app(req, res);
+    try {
+        await connectToDatabase();
+        return app(req, res);
+    } catch (error) {
+        console.error('Database connection error:', error);
+        res.status(500).json({ 
+            error: 'Database connection failed',
+            message: error.message 
+        });
+    }
 };
