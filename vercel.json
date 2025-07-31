@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd client && npm install --legacy-peer-deps && GENERATE_SOURCEMAP=false ESLINT_NO_DEV_ERRORS=true npm run build && cd .. && mkdir -p public && cp -r client/build/* public/",
+  "buildCommand": "cd client && npm install --legacy-peer-deps && npm run build:vercel && cd .. && mkdir -p public && cp -r client/build/* public/",
   "outputDirectory": "public",
   "functions": {
     "api/index.js": {
