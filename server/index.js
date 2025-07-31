@@ -16,9 +16,10 @@ const paymentRoutes = require('./routes/payments');
 const dashboardRoutes = require('./routes/dashboard');
 const toolsRoutes = require('./routes/tools');
 const githubRoutes = require('./routes/github');
+const verificationRoutes = require('./routes/verification');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3001',
@@ -41,18 +42,32 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/vibemarket', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+// MongoDB connection with better error handling for serverless
+let isConnected = false;
 
-mongoose.connection.on('connected', () => {
-  console.log('Connected to MongoDB');
-});
+const connectDB = async () => {
+  if (isConnected) {
+    return;
+  }
+  
+  try {
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/vibemarket', {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
+    isConnected = true;
+    console.log('Connected to MongoDB');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    throw error;
+  }
+};
 
-mongoose.connection.on('error', (err) => {
-  console.error('MongoDB connection error:', err);
-});
+// Connect to database
+connectDB();
 
 // OAuth routes
 const isGoogleConfigured = process.env.GOOGLE_CLIENT_ID && 
@@ -100,11 +115,19 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/tools', toolsRoutes);
 app.use('/api/github', githubRoutes);
+app.use('/api/verification', verificationRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ message: 'PackCode API is running!' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// For Vercel serverless functions, we export the app
+// For local development, we listen on the port
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+// Export for Vercel
+module.exports = app;

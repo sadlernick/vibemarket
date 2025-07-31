@@ -13,12 +13,14 @@ import {
   SparklesIcon
 } from '@heroicons/react/24/outline';
 import GitHubRepositoryPicker from '../components/GitHubRepositoryPicker';
+import GitHubFirstProjectCreator from '../components/GitHubFirstProjectCreator';
 
 const PostProjects: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = Boolean(id);
+  const [useGitHubFirst, setUseGitHubFirst] = useState(!isEditMode); // Default to GitHub-first for new projects
   
   const [formData, setFormData] = useState({
     title: '',
@@ -281,7 +283,7 @@ const PostProjects: React.FC = () => {
             Share Your Projects with the World
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Join thousands of developers who are monetizing their code and building their reputation on VibeMarket.
+            Join thousands of developers who are monetizing their code and building their reputation on PackCode.
           </p>
           
           <div className="grid md:grid-cols-3 gap-8 mb-12">
@@ -351,13 +353,44 @@ const PostProjects: React.FC = () => {
           {isEditMode ? 'Edit Project' : 'Post a New Project'}
         </h1>
         <p className="text-gray-600">
-          Share your project with the VibeMarket community and start earning from your code.
+          Share your project with the PackCode community and start earning from your code.
         </p>
+        
+        {/* GitHub-first vs Manual Toggle */}
+        {!isEditMode && (
+          <div className="mb-6 flex items-center justify-center space-x-6">
+            <button
+              onClick={() => setUseGitHubFirst(true)}
+              className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                useGitHubFirst 
+                  ? 'bg-purple-600 text-white shadow-md' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <CodeBracketIcon className="w-5 h-5 inline mr-2" />
+              Create from GitHub (Recommended)
+            </button>
+            <button
+              onClick={() => setUseGitHubFirst(false)}
+              className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                !useGitHubFirst 
+                  ? 'bg-purple-600 text-white shadow-md' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <DocumentTextIcon className="w-5 h-5 inline mr-2" />
+              Manual Entry
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Form */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <form onSubmit={handleSubmit} className="p-8 space-y-8">
+      {/* Render GitHub-first creator or manual form */}
+      {useGitHubFirst && !isEditMode ? (
+        <GitHubFirstProjectCreator />
+      ) : (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <form onSubmit={handleSubmit} className="p-8 space-y-8">
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start">
               <ExclamationTriangleIcon className="w-5 h-5 text-red-400 mt-0.5 mr-3 flex-shrink-0" />
@@ -736,6 +769,7 @@ const PostProjects: React.FC = () => {
           </div>
         </form>
       </div>
+      )}
     </div>
   );
 };

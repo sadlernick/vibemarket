@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-import { CodeBracketIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { CodeBracketIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 interface GitHubLoginProps {
   onSuccess?: () => void;

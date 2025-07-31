@@ -1,7 +1,59 @@
 const express = require('express');
+const axios = require('axios');
 const { authenticateToken } = require('../middleware/auth');
+const User = require('../models/User');
 
 const router = express.Router();
+
+// Enhanced AI content generation with GitHub repo analysis
+router.post('/analyze-repository', authenticateToken, async (req, res) => {
+  try {
+    const { repositoryUrl, fullName } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!user.githubProfile?.accessToken) {
+      return res.status(400).json({ error: 'GitHub account not connected' });
+    }
+
+    // Parse repository info
+    let owner, repo;
+    if (fullName) {
+      [owner, repo] = fullName.split('/');
+    } else if (repositoryUrl) {
+      const repoMatch = repositoryUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+      if (!repoMatch) {
+        return res.status(400).json({ error: 'Invalid GitHub repository URL' });
+      }
+      [, owner, repo] = repoMatch;
+      repo = repo.replace(/\.git$/, '');
+    } else {
+      return res.status(400).json({ error: 'Repository URL or fullName is required' });
+    }
+
+    // Fetch repository data
+    const repoData = await fetchRepositoryData(user.githubProfile.accessToken, owner, repo);
+    
+    // Analyze and generate project details
+    const analysis = await analyzeRepository(repoData);
+    
+    res.json({
+      success: true,
+      repository: repoData.basic,
+      analysis: {
+        title: analysis.title,
+        description: analysis.description,
+        category: analysis.category,
+        tags: analysis.tags,
+        features: analysis.features,
+        techStack: analysis.techStack,
+        suggestedPrice: analysis.suggestedPrice
+      }
+    });
+  } catch (error) {
+    console.error('Repository analysis error:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Failed to analyze repository' });
+  }
+});
 
 // Simple AI content generation using basic templates
 // This can be enhanced with actual AI APIs later
@@ -217,6 +269,351 @@ function generateSuggestedFeatures(category) {
   };
 
   return features[category] || features.other;
+}
+
+// Fetch comprehensive repository data from GitHub API
+async function fetchRepositoryData(accessToken, owner, repo) {
+  const headers = {
+    'Authorization': `token ${accessToken}`,
+    'Accept': 'application/vnd.github.v3+json'
+  };
+
+  try {
+    // Get basic repository info
+    const repoResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}`, { headers });
+    const repoInfo = repoResponse.data;
+
+    // Get README content
+    let readmeContent = '';
+    try {
+      const readmeResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/readme`, { headers });
+      readmeContent = Buffer.from(readmeResponse.data.content, 'base64').toString('utf-8');
+    } catch (err) {
+      console.log('No README found or accessible');
+    }
+
+    // Get package.json content (if exists)
+    let packageJson = null;
+    try {
+      const packageResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/contents/package.json`, { headers });
+      const packageContent = Buffer.from(packageResponse.data.content, 'base64').toString('utf-8');
+      packageJson = JSON.parse(packageContent);
+    } catch (err) {
+      console.log('No package.json found');
+    }
+
+    // Get repository file structure (top level)
+    let fileStructure = [];
+    try {
+      const contentsResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/contents`, { headers });
+      fileStructure = contentsResponse.data.map(item => ({
+        name: item.name,
+        type: item.type,
+        size: item.size
+      }));
+    } catch (err) {
+      console.log('Could not fetch file structure');
+    }
+
+    // Get languages used
+    let languages = {};
+    try {
+      const languagesResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/languages`, { headers });
+      languages = languagesResponse.data;
+    } catch (err) {
+      console.log('Could not fetch languages');
+    }
+
+    return {
+      basic: {
+        id: repoInfo.id,
+        fullName: repoInfo.full_name,
+        name: repoInfo.name,
+        description: repoInfo.description,
+        language: repoInfo.language,
+        stars: repoInfo.stargazers_count,
+        forks: repoInfo.forks_count,
+        topics: repoInfo.topics || [],
+        license: repoInfo.license?.name || null,
+        defaultBranch: repoInfo.default_branch,
+        updatedAt: repoInfo.updated_at,
+        createdAt: repoInfo.created_at,
+        htmlUrl: repoInfo.html_url
+      },
+      content: {
+        readme: readmeContent,
+        packageJson,
+        fileStructure,
+        languages
+      }
+    };
+  } catch (error) {
+    throw new Error(`Failed to fetch repository data: ${error.message}`);
+  }
+}
+
+// Analyze repository data and generate project details
+async function analyzeRepository(repoData) {
+  const { basic, content } = repoData;
+  
+  // Generate title (clean up repo name)
+  const title = basic.name
+    .split(/[-_]/) // Split on hyphens and underscores
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+
+  // Determine category based on languages, files, and dependencies
+  const category = determineCategory(basic, content);
+  
+  // Extract tags from topics, languages, and dependencies
+  const tags = extractTags(basic, content);
+  
+  // Generate tech stack summary
+  const techStack = generateTechStack(content);
+  
+  // Generate description based on README and repository info
+  const description = generateSmartDescription(basic, content, category, techStack);
+  
+  // Generate features based on README and code analysis
+  const features = extractFeatures(content, category);
+  
+  // Suggest price based on complexity and features
+  const suggestedPrice = suggestPrice(basic, content, features);
+
+  return {
+    title,
+    description,
+    category,
+    tags,
+    features,
+    techStack,
+    suggestedPrice
+  };
+}
+
+// Determine project category based on repository analysis
+function determineCategory(basic, content) {
+  const { languages, packageJson, fileStructure } = content;
+  const { topics } = basic;
+  
+  // Check for mobile development
+  if (topics.includes('react-native') || topics.includes('flutter') || topics.includes('ios') || topics.includes('android')) {
+    return 'mobile';
+  }
+  
+  // Check for game development
+  if (topics.includes('game') || topics.includes('unity') || topics.includes('gamedev') || 
+      fileStructure.some(f => f.name.toLowerCase().includes('game'))) {
+    return 'game';
+  }
+  
+  // Check for desktop apps
+  if (topics.includes('electron') || topics.includes('desktop') || topics.includes('tauri') ||
+      packageJson?.dependencies?.electron || packageJson?.devDependencies?.electron) {
+    return 'desktop';
+  }
+  
+  // Check for libraries/packages
+  if (packageJson?.main || topics.includes('library') || topics.includes('package') || topics.includes('npm')) {
+    return 'library';
+  }
+  
+  // Check for CLI tools
+  if (packageJson?.bin || topics.includes('cli') || topics.includes('tool') ||
+      fileStructure.some(f => f.name === 'bin' && f.type === 'dir')) {
+    return 'tool';
+  }
+  
+  // Check for APIs/backends
+  if (topics.includes('api') || topics.includes('backend') || topics.includes('server') ||
+      packageJson?.dependencies?.express || packageJson?.dependencies?.fastify || 
+      packageJson?.dependencies?.koa || languages?.Go || languages?.Python) {
+    return 'api';
+  }
+  
+  // Default to web if has web frameworks
+  if (packageJson?.dependencies?.react || packageJson?.dependencies?.vue || 
+      packageJson?.dependencies?.angular || languages?.JavaScript || languages?.TypeScript) {
+    return 'web';
+  }
+  
+  return 'other';
+}
+
+// Extract relevant tags from repository data
+function extractTags(basic, content) {
+  const tags = new Set();
+  
+  // Add topics
+  basic.topics.forEach(topic => tags.add(topic));
+  
+  // Add primary language
+  if (basic.language) {
+    tags.add(basic.language.toLowerCase());
+  }
+  
+  // Add languages from languages API
+  Object.keys(content.languages || {}).forEach(lang => {
+    tags.add(lang.toLowerCase());
+  });
+  
+  // Add framework/library tags from package.json
+  if (content.packageJson) {
+    const deps = { ...content.packageJson.dependencies, ...content.packageJson.devDependencies };
+    Object.keys(deps || {}).forEach(dep => {
+      // Add popular frameworks
+      if (['react', 'vue', 'angular', 'express', 'next', 'nuxt', 'gatsby', 'svelte'].includes(dep)) {
+        tags.add(dep);
+      }
+    });
+  }
+  
+  return Array.from(tags).slice(0, 10); // Limit to 10 tags
+}
+
+// Generate tech stack summary
+function generateTechStack(content) {
+  const stack = [];
+  
+  // Primary languages
+  const languages = Object.keys(content.languages || {});
+  if (languages.length > 0) {
+    stack.push(`Languages: ${languages.slice(0, 3).join(', ')}`);
+  }
+  
+  // Frameworks from package.json
+  if (content.packageJson) {
+    const deps = { ...content.packageJson.dependencies, ...content.packageJson.devDependencies };
+    const frameworks = Object.keys(deps || {}).filter(dep => 
+      ['react', 'vue', 'angular', 'express', 'next', 'nuxt', 'gatsby', 'svelte', 'fastify', 'koa'].includes(dep)
+    );
+    if (frameworks.length > 0) {
+      stack.push(`Frameworks: ${frameworks.slice(0, 3).join(', ')}`);
+    }
+  }
+  
+  return stack.join(' • ');
+}
+
+// Generate smart description based on repository analysis
+function generateSmartDescription(basic, content, category, techStack) {
+  let description = '';
+  
+  // Start with repository description if available
+  if (basic.description) {
+    description += `${basic.description}\n\n`;
+  }
+  
+  // Extract key information from README
+  if (content.readme) {
+    const readme = content.readme;
+    
+    // Look for description sections
+    const descMatch = readme.match(/##?\s*(Description|About|Overview)[\s\S]*?(?=##|$)/i);
+    if (descMatch) {
+      const desc = descMatch[0].replace(/##?\s*(Description|About|Overview)/i, '').trim();
+      if (desc && desc.length < 500) {
+        description += desc + '\n\n';
+      }
+    }
+    
+    // Look for features section
+    const featuresMatch = readme.match(/##?\s*Features[\s\S]*?(?=##|$)/i);
+    if (featuresMatch) {
+      description += '🚀 **Key Features:**\n';
+      const features = featuresMatch[0].replace(/##?\s*Features/i, '').trim();
+      description += features + '\n\n';
+    }
+  }
+  
+  // Add tech stack information
+  if (techStack) {
+    description += `🛠️ **Tech Stack:** ${techStack}\n\n`;
+  }
+  
+  // Add repository stats
+  if (basic.stars > 0 || basic.forks > 0) {
+    description += `⭐ ${basic.stars} stars • 🍴 ${basic.forks} forks\n\n`;
+  }
+  
+  // Fallback to template if description is too short
+  if (description.length < 200) {
+    const templateDesc = generateTemplateDescription(
+      basic.name, 
+      category, 
+      Object.keys(content.languages || {}), 
+      basic.htmlUrl
+    );
+    description = templateDesc;
+  }
+  
+  return description.trim();
+}
+
+// Extract features from README and code analysis
+function extractFeatures(content, category) {
+  const freeFeatures = [];
+  const paidFeatures = [];
+  
+  // Basic features for all projects
+  freeFeatures.push('View source code', 'Basic documentation', 'Personal use license');
+  
+  // Add category-specific features
+  const categoryFeatures = generateSuggestedFeatures(category);
+  freeFeatures.push(...categoryFeatures.free.slice(3)); // Skip duplicates
+  paidFeatures.push(...categoryFeatures.paid);
+  
+  // Extract features from README
+  if (content.readme) {
+    const readme = content.readme;
+    const featuresMatch = readme.match(/##?\s*Features[\s\S]*?(?=##|$)/i);
+    if (featuresMatch) {
+      const features = featuresMatch[0]
+        .replace(/##?\s*Features/i, '')
+        .split('\n')
+        .filter(line => line.trim() && (line.includes('*') || line.includes('-')))
+        .map(line => line.replace(/^[\s\-\*]+/, '').trim())
+        .filter(line => line.length > 0 && line.length < 100);
+      
+      // Add unique features to free tier
+      features.forEach(feature => {
+        if (!freeFeatures.some(f => f.toLowerCase().includes(feature.toLowerCase().substring(0, 10)))) {
+          freeFeatures.push(feature);
+        }
+      });
+    }
+  }
+  
+  return {
+    freeFeatures: freeFeatures.slice(0, 8), // Limit to 8 features
+    paidFeatures: paidFeatures.slice(0, 8)
+  };
+}
+
+// Suggest price based on repository complexity
+function suggestPrice(basic, content, features) {
+  let basePrice = 10; // Base price
+  
+  // Increase price based on stars (popularity)
+  if (basic.stars > 100) basePrice += 20;
+  else if (basic.stars > 50) basePrice += 10;
+  else if (basic.stars > 10) basePrice += 5;
+  
+  // Increase price based on code complexity (languages)
+  const languageCount = Object.keys(content.languages || {}).length;
+  basePrice += languageCount * 5;
+  
+  // Increase price based on feature count
+  const totalFeatures = (features.freeFeatures?.length || 0) + (features.paidFeatures?.length || 0);
+  basePrice += Math.min(totalFeatures * 2, 20);
+  
+  // Increase price if has comprehensive documentation
+  if (content.readme && content.readme.length > 1000) {
+    basePrice += 10;
+  }
+  
+  // Round to nearest 5
+  return Math.max(15, Math.round(basePrice / 5) * 5);
 }
 
 module.exports = router;

@@ -27,13 +27,13 @@ const Login: React.FC = () => {
   const handleGoogleLogin = async () => {
     try {
       // Check if Google OAuth is configured
-      const response = await fetch('http://localhost:5001/auth/google');
+      const response = await fetch(process.env.NODE_ENV === 'production' ? '/auth/google' : 'http://localhost:5001/auth/google');
       if (response.status === 501) {
         const errorData = await response.json();
         setError(errorData.error);
         return;
       }
-      window.location.href = 'http://localhost:5001/auth/google';
+      window.location.href = process.env.NODE_ENV === 'production' ? '/auth/google' : 'http://localhost:5001/auth/google';
     } catch (error) {
       setError('Unable to connect to authentication service. Please try again later.');
     }
