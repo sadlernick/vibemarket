@@ -15,6 +15,7 @@ const aiRoutes = require('./routes/ai');
 const paymentRoutes = require('./routes/payments');
 const dashboardRoutes = require('./routes/dashboard');
 const toolsRoutes = require('./routes/tools');
+const githubRoutes = require('./routes/github');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -98,6 +99,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/tools', toolsRoutes);
+app.use('/api/github', githubRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ message: 'PackCode API is running!' });

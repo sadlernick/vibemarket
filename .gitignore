@@ -100,4 +100,4 @@ uploads/
 
 # Log files
 *.log
-server.log
+server.logclient/mongodb*

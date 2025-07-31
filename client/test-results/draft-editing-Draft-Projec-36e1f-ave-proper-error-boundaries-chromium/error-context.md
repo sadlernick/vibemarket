@@ -1,0 +1,46 @@
+# Page snapshot
+
+```yaml
+- navigation:
+  - link "VibeMarket":
+    - /url: /
+  - link "Find Projects":
+    - /url: /find-projects
+  - link "Post Projects":
+    - /url: /post-projects
+  - link "Sign in":
+    - /url: /login
+  - link "Get Started":
+    - /url: /register
+- main:
+  - heading "Find Projects" [level=1]
+  - paragraph: Discover amazing projects from the vibe coder community. Browse freely, login to interact.
+  - textbox "Search projects... (e.g., 'I need a React component for user authentication')"
+  - button "AI Smart Search" [disabled]
+  - combobox:
+    - option "All Categories" [selected]
+    - option "Web Apps"
+    - option "Mobile Apps"
+    - option "Desktop Apps"
+    - option "APIs"
+    - option "Libraries"
+    - option "Tools"
+    - option "Games"
+    - option "Other"
+  - combobox:
+    - option "Newest First" [selected]
+    - option "Most Viewed"
+    - option "Most Downloaded"
+    - option "Highest Rated"
+    - 'option "Price: Low to High"'
+  - button
+  - heading "No projects found" [level=3]
+  - paragraph: Try adjusting your search criteria or browse all categories.
+  - button "Clear Filters"
+  - heading "Ready to dive deeper?" [level=3]
+  - paragraph: Sign up to run demos, view source code, purchase licenses, and connect with developers.
+  - link "Sign Up Free":
+    - /url: /register
+  - link "Sign In":
+    - /url: /login
+```

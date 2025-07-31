@@ -101,7 +101,7 @@ router.post('/create-payment-intent', authenticateToken, async (req, res) => {
     }
 
     const price = project.license.price * 100; // Convert to cents
-    const marketplaceFee = Math.round(price * (project.license.marketplaceFeePct / 100));
+    const marketplaceFee = Math.round(price * 0.20); // 20% marketplace fee
     const sellerAmount = price - marketplaceFee;
 
     // Create payment intent with application fee
@@ -199,7 +199,7 @@ router.get('/seller-earnings', authenticateToken, async (req, res) => {
       .sort({ purchaseDate: -1 });
 
     const totalEarnings = licenses.reduce((sum, license) => {
-      const marketplaceFee = license.price * 0.2; // 20% fee
+      const marketplaceFee = Math.round(license.price * 0.20 * 100) / 100; // 20% fee
       return sum + (license.price - marketplaceFee);
     }, 0);
 

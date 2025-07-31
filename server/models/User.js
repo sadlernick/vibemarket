@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: function() { return !this.oauth.google.id && !this.oauth.apple.id; },
+    required: function() { return !this.oauth.google.id && !this.oauth.apple.id && !this.githubProfile.id; },
     minlength: 6
   },
   oauth: {
@@ -46,8 +46,11 @@ const userSchema = new mongoose.Schema({
     trim: true
   }],
   githubProfile: {
-    type: String,
-    default: ''
+    id: Number,
+    username: String,
+    accessToken: String,
+    profileUrl: String,
+    avatarUrl: String
   },
   website: {
     type: String,
