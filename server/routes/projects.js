@@ -8,9 +8,13 @@ const OpenAI = require('openai');
 
 const router = express.Router();
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+// Initialize OpenAI only if API key is available
+let openai = null;
+if (process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  });
+}
 
 // AI Generate endpoint
 router.post('/ai-generate', authenticateToken, async (req, res) => {
@@ -46,6 +50,13 @@ Please return a JSON object with the following structure:
 }
 
 Make the content professional, engaging, and marketplace-ready. Generate realistic GitHub URLs with the pattern https://github.com/username/reponame.`;
+
+    if (!openai) {
+      return res.status(503).json({ 
+        error: 'AI service unavailable', 
+        message: 'OpenAI API key not configured' 
+      });
+    }
 
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
@@ -396,6 +407,13 @@ Consider:
 - Functionality overlap
 
 Return only the JSON response.`;
+
+    if (!openai) {
+      return res.status(503).json({ 
+        error: 'AI service unavailable', 
+        message: 'OpenAI API key not configured' 
+      });
+    }
 
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
