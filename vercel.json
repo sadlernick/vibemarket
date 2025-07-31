@@ -22,5 +22,10 @@
       "src": "/(.*)",
       "dest": "/public/$1"
     }
-  ]
+  ],
+  "env": {
+    "ESLINT_NO_DEV_ERRORS": "true",
+    "GENERATE_SOURCEMAP": "false",
+    "CI": "false"
+  }
 }
