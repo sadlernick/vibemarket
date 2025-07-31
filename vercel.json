@@ -26,6 +26,7 @@
   "env": {
     "ESLINT_NO_DEV_ERRORS": "true",
     "GENERATE_SOURCEMAP": "false",
-    "CI": "false"
+    "CI": "false",
+    "SKIP_PREFLIGHT_CHECK": "true"
   }
 }
