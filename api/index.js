@@ -92,12 +92,26 @@ app.use('/tools', toolsRoutes);
 app.use('/github', githubRoutes);
 app.use('/verification', verificationRoutes);
 
-app.get('/health', (req, res) => {
-    res.json({ 
+app.get('/health', async (req, res) => {
+    const health = {
         status: 'ok', 
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development'
-    });
+        environment: process.env.NODE_ENV || 'development',
+        database: 'disconnected'
+    };
+
+    // Test database connection
+    try {
+        if (cachedConnection || await connectToDatabase()) {
+            // Try a simple ping to verify connection
+            await mongoose.connection.db.admin().ping();
+            health.database = 'connected';
+        }
+    } catch (error) {
+        health.database = 'error: ' + error.message;
+    }
+
+    res.json(health);
 });
 
 // Root route
@@ -116,13 +130,20 @@ app.use((err, req, res, next) => {
 
 // For Vercel serverless functions
 module.exports = async (req, res) => {
+    // Don't require database connection for all routes
+    // Let individual routes handle database connections as needed
     try {
-        await connectToDatabase();
+        // Try to connect to database, but don't fail if it doesn't work
+        if (!cachedConnection) {
+            await connectToDatabase().catch(err => {
+                console.warn('Database connection failed, continuing without DB:', err.message);
+            });
+        }
         return app(req, res);
     } catch (error) {
-        console.error('Database connection error:', error);
+        console.error('Server error:', error);
         res.status(500).json({ 
-            error: 'Database connection failed',
+            error: 'Server error',
             message: error.message 
         });
     }
