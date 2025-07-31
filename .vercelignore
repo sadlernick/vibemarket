@@ -59,28 +59,10 @@ client/tests/
 *.md
 !README.md
 !VERCEL_DEPLOYMENT.md
-docs/
-deploy/
 
 # Development scripts and temp files
 scripts/
-temp/
 debug-*.js
-quick-*.js
-quick-*.sh
-merge-*.sh
-setup-*.sh
-setup-*.md
-full-frontend.html
-simple-frontend.html
-serve-frontend.js
-test-server.js
-react-frontend/
 
-# Large files that aren't needed for deployment
-client/public/logo512.png
-client/public/logo192.png
-
-# Deployment artifacts
-production-deployment-plan.md
-client-package.json
+# Client build (we copy this to public/)
+client/build/
