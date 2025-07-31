@@ -12,6 +12,7 @@
 **/*.spec.ts
 **/*.spec.tsx
 **/tests/**
+**/test-results/**
 coverage/
 .nyc_output/
 
@@ -41,22 +42,45 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+server.log
 
 # MongoDB data
 data/
 client/mongodb*
 
-# Playwright
+# Playwright and test artifacts
 playwright-report/
 test-results/
 client/playwright-report/
 client/test-results/
+client/tests/
 
-# Documentation
+# Documentation (keeping essential ones)
 *.md
+!README.md
+!VERCEL_DEPLOYMENT.md
 docs/
 deploy/
+
+# Development scripts and temp files
+scripts/
+temp/
+debug-*.js
+quick-*.js
+quick-*.sh
+merge-*.sh
+setup-*.sh
+setup-*.md
+full-frontend.html
+simple-frontend.html
+serve-frontend.js
+test-server.js
+react-frontend/
 
 # Large files that aren't needed for deployment
 client/public/logo512.png
 client/public/logo192.png
+
+# Deployment artifacts
+production-deployment-plan.md
+client-package.json
