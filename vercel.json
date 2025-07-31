@@ -1,32 +1,20 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "public"
-      }
-    },
-    {
-      "src": "server/index.js",
-      "use": "@vercel/node"
+  "buildCommand": "cd client && npm install --legacy-peer-deps && GENERATE_SOURCEMAP=false ESLINT_NO_DEV_ERRORS=true npm run build && cd .. && mkdir -p public && cp -r client/build/* public/",
+  "outputDirectory": "public",
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 30
     }
-  ],
+  },
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/server/index.js"
+      "dest": "/api/index.js"
     },
     {
       "src": "/(.*)",
       "dest": "/public/$1"
     }
-  ],
-  "env": {
-    "ESLINT_NO_DEV_ERRORS": "true",
-    "GENERATE_SOURCEMAP": "false",
-    "CI": "false",
-    "SKIP_PREFLIGHT_CHECK": "true"
-  }
+  ]
 }
