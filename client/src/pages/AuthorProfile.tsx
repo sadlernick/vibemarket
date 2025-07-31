@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -60,13 +60,7 @@ const AuthorProfile: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (id) {
-      fetchAuthorData();
-    }
-  }, [id]);
-
-  const fetchAuthorData = async () => {
+  const fetchAuthorData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -107,7 +101,13 @@ const AuthorProfile: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      fetchAuthorData();
+    }
+  }, [id, fetchAuthorData]);
 
   if (loading) {
     return (

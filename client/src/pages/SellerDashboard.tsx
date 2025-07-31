@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+// import { useAuth } from '../contexts/AuthContext'; // TODO: Use for seller-specific data
 import SellerOnboarding from '../components/Payments/SellerOnboarding';
 import { 
   BanknotesIcon, 
@@ -24,7 +24,7 @@ interface EarningsData {
 }
 
 const SellerDashboard: React.FC = () => {
-  const { } = useAuth();
+  // const { user } = useAuth(); // TODO: Use user for seller-specific data
   const [earningsData, setEarningsData] = useState<EarningsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

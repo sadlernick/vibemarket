@@ -38,7 +38,7 @@ const ProjectIdeaGenerator: React.FC = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [ideas, setIdeas] = useState<ProjectIdea[]>([]);
-  const [selectedIdea, setSelectedIdea] = useState<ProjectIdea | null>(null);
+  const [, setSelectedIdea] = useState<ProjectIdea | null>(null);
 
   // Form state
   const [skillLevel, setSkillLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');

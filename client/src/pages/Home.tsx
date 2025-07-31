@@ -6,12 +6,10 @@ import {
   CurrencyDollarIcon, 
   UserGroupIcon,
   PlayIcon,
-  StarIcon,
   ArrowRightIcon,
   LightBulbIcon,
   AcademicCapIcon,
-  SparklesIcon,
-  ChartBarIcon
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 
 const Home: React.FC = () => {
