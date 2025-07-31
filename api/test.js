@@ -17,6 +17,18 @@ module.exports = async (req, res) => {
             MONGODB_URI: process.env.MONGODB_URI ? 'set' : 'missing',
             JWT_SECRET: process.env.JWT_SECRET ? 'set' : 'missing',
             CLIENT_URL: process.env.CLIENT_URL || 'undefined',
+            OPENAI_API_KEY: process.env.OPENAI_API_KEY ? 'set' : 'missing',
+            GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID ? 'set' : 'missing',
+            VERCEL: process.env.VERCEL || 'undefined',
+            VERCEL_ENV: process.env.VERCEL_ENV || 'undefined',
+            allEnvKeys: Object.keys(process.env).filter(key => 
+                key.includes('MONGODB') || 
+                key.includes('JWT') || 
+                key.includes('CLIENT') ||
+                key.includes('GITHUB') ||
+                key.includes('NODE_ENV') ||
+                key.includes('OPENAI')
+            ),
             timestamp: new Date().toISOString(),
             method: req.method,
             url: req.url
