@@ -3,11 +3,15 @@
   "buildCommand": "cd client && npm install --legacy-peer-deps && CI=false npm run build:vercel && cd .. && mkdir -p public && cp -r client/build/* public/",
   "outputDirectory": "public",
   "functions": {
-    "api/index.js": {
+    "api/*.js": {
       "maxDuration": 30
     }
   },
   "routes": [
+    {
+      "src": "/api/test",
+      "dest": "/api/test.js"
+    },
     {
       "src": "/api/(.*)",
       "dest": "/api/index.js"
