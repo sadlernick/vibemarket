@@ -33,6 +33,10 @@
       "destination": "/api/test-endpoint.js"
     },
     {
+      "source": "/api/test-ai",
+      "destination": "/api/test-endpoint.js"
+    },
+    {
       "source": "/api/dashboard",
       "destination": "/api/index.js"
     },

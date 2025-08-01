@@ -88,5 +88,55 @@ app.post('/test', authenticateToken, async (req, res) => {
     }
 });
 
+// Test AI endpoint without external API calls
+app.post('/test-ai', authenticateToken, async (req, res) => {
+    try {
+        console.log('=== TEST AI ENDPOINT CALLED ===');
+        console.log('Headers:', JSON.stringify(req.headers));
+        console.log('Body:', JSON.stringify(req.body));
+        console.log('User:', req.user?._id);
+        
+        const { fullName } = req.body;
+        const user = await User.findById(req.user._id);
+        
+        if (!fullName) {
+            return res.status(400).json({ error: 'fullName is required' });
+        }
+        
+        const [owner, repo] = fullName.split('/');
+        
+        // Mock analysis without external API calls
+        const mockAnalysis = {
+            title: repo.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            description: `Mock analysis for ${fullName}`,
+            category: 'web',
+            tags: ['javascript', 'opensource'],
+            features: {
+                freeFeatures: ['Basic functionality'],
+                paidFeatures: ['Advanced features']
+            },
+            techStack: 'JavaScript',
+            suggestedPrice: 50
+        };
+        
+        res.json({
+            success: true,
+            repository: {
+                fullName,
+                name: repo,
+                description: `Mock repository ${fullName}`
+            },
+            analysis: mockAnalysis
+        });
+    } catch (error) {
+        console.error('Test AI endpoint error:', error);
+        res.status(500).json({
+            error: 'Test AI endpoint failed',
+            details: error.message,
+            stack: error.stack
+        });
+    }
+});
+
 // Export the app
 module.exports = app;

@@ -356,9 +356,15 @@ async function fetchPublicRepositoryData(owner, repo) {
     const repoResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}`, {
       timeout: 5000, // 5 second timeout for serverless
       headers: {
-        'Accept': 'application/vnd.github.v3+json'
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'PackCode-App/1.0'
       }
     });
+    
+    if (!repoResponse.data) {
+      throw new Error('No repository data received from GitHub API');
+    }
+    
     const repoInfo = repoResponse.data;
 
     // Get public README content
