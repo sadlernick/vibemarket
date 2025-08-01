@@ -8,9 +8,14 @@ const OpenAI = require('openai');
 
 const router = express.Router();
 
-// Initialize OpenAI only if API key is available
+// Initialize OpenAI only if API key is available and valid
 let openai = null;
-if (process.env.OPENAI_API_KEY) {
+const isValidOpenAIKey = process.env.OPENAI_API_KEY && 
+                        process.env.OPENAI_API_KEY !== 'dummy' && 
+                        !process.env.OPENAI_API_KEY.includes('dummy') &&
+                        process.env.OPENAI_API_KEY.startsWith('sk-');
+
+if (isValidOpenAIKey) {
   openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
   });
@@ -26,16 +31,22 @@ router.post('/ai-generate', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Project name and description are required' });
     }
 
-    // Check if OpenAI API key is available
+    // Check if OpenAI API key is available and valid
+    const isValidKey = process.env.OPENAI_API_KEY && 
+                      process.env.OPENAI_API_KEY !== 'dummy' && 
+                      !process.env.OPENAI_API_KEY.includes('dummy') &&
+                      process.env.OPENAI_API_KEY.startsWith('sk-');
+    
     console.log('OpenAI API Key status:', {
       hasKey: !!process.env.OPENAI_API_KEY,
-      keyValue: process.env.OPENAI_API_KEY?.substring(0, 10) + '...',
-      isDummy: process.env.OPENAI_API_KEY === 'dummy'
+      keyPrefix: process.env.OPENAI_API_KEY?.substring(0, 10) + '...',
+      isDummy: process.env.OPENAI_API_KEY?.includes('dummy'),
+      isValid: isValidKey
     });
     
-    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'dummy') {
+    if (!isValidKey) {
       // Return a mock AI-generated response
-      console.log('Using mock AI response');
+      console.log('Using mock AI response - invalid or missing API key');
       const mockResponse = generateMockAIResponse(projectName, description);
       return res.json(mockResponse);
     }
@@ -390,8 +401,8 @@ router.post('/ai-search', optionalAuth, async (req, res) => {
       return res.json({ projects: [], searchSummary: 'No projects found in the marketplace.' });
     }
 
-    // Check if OpenAI API key is available
-    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'dummy') {
+    // Check if OpenAI API key is available and valid  
+    if (!isValidOpenAIKey) {
       // Use fallback semantic search
       const results = performSemanticSearch(query, allProjects);
       return res.json(results);

@@ -4,14 +4,23 @@ const OpenAI = require('openai');
 
 const router = express.Router();
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+// Initialize OpenAI only if API key is available and valid
+let openai = null;
+const isValidOpenAIKey = process.env.OPENAI_API_KEY && 
+                        process.env.OPENAI_API_KEY !== 'dummy' && 
+                        !process.env.OPENAI_API_KEY.includes('dummy') &&
+                        process.env.OPENAI_API_KEY.startsWith('sk-');
+
+if (isValidOpenAIKey) {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  });
+}
 
 // Get idea generator status endpoint
 router.get('/idea-generator', optionalAuth, async (req, res) => {
   try {
-    const isOpenAIAvailable = !!(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'dummy');
+    const isOpenAIAvailable = isValidOpenAIKey;
     
     res.json({
       status: 'available',
@@ -30,8 +39,8 @@ router.post('/generate-ideas', optionalAuth, async (req, res) => {
   try {
     const { skillLevel, interests, timeCommitment, goals } = req.body;
 
-    // Check if OpenAI API key is available
-    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'dummy') {
+    // Check if OpenAI API key is available and valid
+    if (!isValidOpenAIKey) {
       // Return mock ideas
       const mockIdeas = generateMockIdeas(skillLevel, interests, timeCommitment, goals);
       return res.json({ ideas: mockIdeas });
