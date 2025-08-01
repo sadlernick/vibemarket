@@ -37,6 +37,10 @@
       "destination": "/api/test-endpoint.js"
     },
     {
+      "source": "/api/ai/analyze-repository",
+      "destination": "/api/ai-analyze.js"
+    },
+    {
       "source": "/api/dashboard",
       "destination": "/api/index.js"
     },
