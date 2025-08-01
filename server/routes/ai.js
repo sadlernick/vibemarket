@@ -96,15 +96,21 @@ router.post('/analyze-repository', authenticateToken, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Repository analysis error:', error.response?.data || error.message);
+    console.error('=== REPOSITORY ANALYSIS ERROR ===');
+    console.error('Error message:', error.message);
+    console.error('Error name:', error.name);
     console.error('Error stack:', error.stack);
+    console.error('Request headers:', JSON.stringify(req.headers));
+    console.error('Request body:', JSON.stringify(req.body));
+    console.error('User ID:', req.user?._id);
     console.error('Error details:', {
       name: error.name,
       message: error.message,
       code: error.code,
       response: error.response?.data,
       fullName: req.body.fullName,
-      repositoryUrl: req.body.repositoryUrl
+      repositoryUrl: req.body.repositoryUrl,
+      isProduction: process.env.NODE_ENV === 'production'
     });
     
     // Return a more specific error message
@@ -112,11 +118,14 @@ router.post('/analyze-repository', authenticateToken, async (req, res) => {
       res.status(404).json({ error: 'Repository not found or not accessible' });
     } else if (error.message.includes('rate limit')) {
       res.status(429).json({ error: 'GitHub API rate limit exceeded. Please try again later.' });
+    } else if (error.message.includes('timed out')) {
+      res.status(408).json({ error: 'Repository analysis timed out. Please try again.' });
     } else {
       res.status(500).json({ 
         error: 'Failed to analyze repository', 
         details: error.message,
-        errorType: error.name
+        errorType: error.name,
+        timestamp: new Date().toISOString()
       });
     }
   }
