@@ -63,7 +63,7 @@ module.exports = async (req, res) => {
             });
         }
 
-        if ((path.includes('/register') || path.endsWith('/register')) && method === 'POST') {
+        if ((path.includes('/auth/register') || path.endsWith('/register')) && method === 'POST') {
             const { username, email, password } = req.body;
 
             if (!username || !email || !password) {
@@ -113,7 +113,7 @@ module.exports = async (req, res) => {
                 }
             });
 
-        } else if ((path.includes('/login') || path.endsWith('/login')) && method === 'POST') {
+        } else if ((path.includes('/auth/login') || path.endsWith('/login')) && method === 'POST') {
             const { email, password } = req.body;
 
             if (!email || !password) {
@@ -147,7 +147,7 @@ module.exports = async (req, res) => {
                 }
             });
 
-        } else if ((path.includes('/profile') || path.endsWith('/profile')) && method === 'GET') {
+        } else if ((path.includes('/auth/profile') || path.endsWith('/profile')) && method === 'GET') {
             // Handle profile endpoint - requires authentication
             const authHeader = req.headers.authorization;
             if (!authHeader || !authHeader.startsWith('Bearer ')) {
