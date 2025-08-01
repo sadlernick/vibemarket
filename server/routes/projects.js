@@ -8,17 +8,22 @@ const OpenAI = require('openai');
 
 const router = express.Router();
 
-// Initialize OpenAI only if API key is available and valid
-let openai = null;
-const isValidOpenAIKey = process.env.OPENAI_API_KEY && 
-                        process.env.OPENAI_API_KEY !== 'dummy' && 
-                        !process.env.OPENAI_API_KEY.includes('dummy') &&
-                        process.env.OPENAI_API_KEY.startsWith('sk-');
+// Function to check if OpenAI API key is valid
+function isValidOpenAIKey() {
+  return process.env.OPENAI_API_KEY && 
+         process.env.OPENAI_API_KEY !== 'dummy' && 
+         !process.env.OPENAI_API_KEY.includes('dummy') &&
+         process.env.OPENAI_API_KEY.startsWith('sk-');
+}
 
-if (isValidOpenAIKey) {
-  openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-  });
+// Lazy initialization of OpenAI client
+function getOpenAIClient() {
+  if (isValidOpenAIKey()) {
+    return new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
+  }
+  return null;
 }
 
 // AI Generate endpoint
@@ -32,19 +37,16 @@ router.post('/ai-generate', authenticateToken, async (req, res) => {
     }
 
     // Check if OpenAI API key is available and valid
-    const isValidKey = process.env.OPENAI_API_KEY && 
-                      process.env.OPENAI_API_KEY !== 'dummy' && 
-                      !process.env.OPENAI_API_KEY.includes('dummy') &&
-                      process.env.OPENAI_API_KEY.startsWith('sk-');
+    const isValid = isValidOpenAIKey();
     
     console.log('OpenAI API Key status:', {
       hasKey: !!process.env.OPENAI_API_KEY,
       keyPrefix: process.env.OPENAI_API_KEY?.substring(0, 10) + '...',
       isDummy: process.env.OPENAI_API_KEY?.includes('dummy'),
-      isValid: isValidKey
+      isValid
     });
     
-    if (!isValidKey) {
+    if (!isValid) {
       // Return a mock AI-generated response
       console.log('Using mock AI response - invalid or missing API key');
       const mockResponse = generateMockAIResponse(projectName, description);
@@ -70,6 +72,7 @@ Please return a JSON object with the following structure:
 
 Make the content professional, engaging, and marketplace-ready. Generate realistic GitHub URLs with the pattern https://github.com/username/reponame.`;
 
+    const openai = getOpenAIClient();
     console.log('OpenAI client status:', { hasOpenaiClient: !!openai });
     
     if (!openai) {
@@ -402,7 +405,7 @@ router.post('/ai-search', optionalAuth, async (req, res) => {
     }
 
     // Check if OpenAI API key is available and valid  
-    if (!isValidOpenAIKey) {
+    if (!isValidOpenAIKey()) {
       // Use fallback semantic search
       const results = performSemanticSearch(query, allProjects);
       return res.json(results);
@@ -441,6 +444,7 @@ Consider:
 
 Return only the JSON response.`;
 
+    const openai = getOpenAIClient();
     if (!openai) {
       return res.status(503).json({ 
         error: 'AI service unavailable', 

@@ -4,23 +4,28 @@ const OpenAI = require('openai');
 
 const router = express.Router();
 
-// Initialize OpenAI only if API key is available and valid
-let openai = null;
-const isValidOpenAIKey = process.env.OPENAI_API_KEY && 
-                        process.env.OPENAI_API_KEY !== 'dummy' && 
-                        !process.env.OPENAI_API_KEY.includes('dummy') &&
-                        process.env.OPENAI_API_KEY.startsWith('sk-');
+// Function to check if OpenAI API key is valid
+function isValidOpenAIKey() {
+  return process.env.OPENAI_API_KEY && 
+         process.env.OPENAI_API_KEY !== 'dummy' && 
+         !process.env.OPENAI_API_KEY.includes('dummy') &&
+         process.env.OPENAI_API_KEY.startsWith('sk-');
+}
 
-if (isValidOpenAIKey) {
-  openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-  });
+// Lazy initialization of OpenAI client
+function getOpenAIClient() {
+  if (isValidOpenAIKey()) {
+    return new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
+  }
+  return null;
 }
 
 // Get idea generator status endpoint
 router.get('/idea-generator', optionalAuth, async (req, res) => {
   try {
-    const isOpenAIAvailable = isValidOpenAIKey;
+    const isOpenAIAvailable = isValidOpenAIKey();
     
     res.json({
       status: 'available',
@@ -40,7 +45,7 @@ router.post('/generate-ideas', optionalAuth, async (req, res) => {
     const { skillLevel, interests, timeCommitment, goals } = req.body;
 
     // Check if OpenAI API key is available and valid
-    if (!isValidOpenAIKey) {
+    if (!isValidOpenAIKey()) {
       // Return mock ideas
       const mockIdeas = generateMockIdeas(skillLevel, interests, timeCommitment, goals);
       return res.json({ ideas: mockIdeas });
@@ -70,6 +75,13 @@ For each project, provide:
 }
 
 Return an array of 3 project ideas as JSON.`;
+
+    const openai = getOpenAIClient();
+    if (!openai) {
+      // Fallback to mock ideas if OpenAI client creation fails
+      const mockIdeas = generateMockIdeas(skillLevel, interests, timeCommitment, goals);
+      return res.json({ ideas: mockIdeas });
+    }
 
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
