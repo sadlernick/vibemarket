@@ -145,6 +145,40 @@ router.post('/confirm-payment', authenticateToken, async (req, res) => {
   }
 });
 
+// Default GET route for licenses (returns user's licenses)
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+
+    const licenses = await License.find({
+      licensee: req.user._id,
+      isActive: true
+    })
+    .populate('project', 'title description author category createdAt')
+    .populate('project.author', 'username')
+    .sort({ createdAt: -1 })
+    .limit(limit * 1)
+    .skip((page - 1) * limit);
+
+    const total = await License.countDocuments({
+      licensee: req.user._id,
+      isActive: true
+    });
+
+    res.json({
+      licenses,
+      pagination: {
+        current: parseInt(page),
+        pages: Math.ceil(total / limit),
+        total
+      }
+    });
+  } catch (error) {
+    console.error('Get licenses error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.get('/my-licenses', authenticateToken, async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;

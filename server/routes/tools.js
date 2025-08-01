@@ -8,6 +8,23 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
+// Get idea generator status endpoint
+router.get('/idea-generator', optionalAuth, async (req, res) => {
+  try {
+    const isOpenAIAvailable = !!(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'dummy');
+    
+    res.json({
+      status: 'available',
+      aiEnabled: isOpenAIAvailable,
+      message: isOpenAIAvailable ? 'AI-powered idea generation available' : 'Mock idea generation available',
+      endpoint: '/api/tools/generate-ideas'
+    });
+  } catch (error) {
+    console.error('Idea generator status error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Generate project ideas endpoint
 router.post('/generate-ideas', optionalAuth, async (req, res) => {
   try {

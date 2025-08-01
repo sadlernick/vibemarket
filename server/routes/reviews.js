@@ -6,6 +6,37 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Default GET route for reviews (returns user's reviews)
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+
+    const reviews = await Review.find({
+      reviewer: req.user._id
+    })
+    .populate('project', 'title description category')
+    .sort({ createdAt: -1 })
+    .limit(limit * 1)
+    .skip((page - 1) * limit);
+
+    const total = await Review.countDocuments({
+      reviewer: req.user._id
+    });
+
+    res.json({
+      reviews,
+      pagination: {
+        current: parseInt(page),
+        pages: Math.ceil(total / limit),
+        total
+      }
+    });
+  } catch (error) {
+    console.error('Get reviews error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.post('/', authenticateToken, async (req, res) => {
   try {
     const { projectId, rating, comment } = req.body;
