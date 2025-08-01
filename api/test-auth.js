@@ -50,18 +50,6 @@ module.exports = async (req, res) => {
         const url = new URL(req.url, `http://${req.headers.host}`);
         const path = url.pathname;
 
-        console.log('Auth request:', method, path, 'Original URL:', req.url);
-        
-        // For debugging - always return debug info for now
-        if (method === 'GET' && path.includes('debug')) {
-            return res.json({
-                method,
-                originalUrl: req.url,
-                pathname: path,
-                fullUrl: url.href,
-                query: url.search
-            });
-        }
 
         if ((path.includes('/auth/register') || path.endsWith('/register')) && method === 'POST') {
             const { username, email, password } = req.body;

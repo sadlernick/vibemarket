@@ -13,10 +13,6 @@
       "destination": "/api/health.js"
     },
     {
-      "source": "/api/auth/debug",
-      "destination": "/api/test-debug.js"
-    },
-    {
       "source": "/api/auth/(.*)",
       "destination": "/api/test-auth.js"
     },
