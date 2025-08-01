@@ -62,6 +62,14 @@ router.post('/analyze-repository', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Repository analysis error:', error.response?.data || error.message);
     console.error('Error stack:', error.stack);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      response: error.response?.data,
+      fullName: req.body.fullName,
+      repositoryUrl: req.body.repositoryUrl
+    });
     
     // Return a more specific error message
     if (error.message.includes('Not Found')) {
@@ -69,7 +77,11 @@ router.post('/analyze-repository', authenticateToken, async (req, res) => {
     } else if (error.message.includes('rate limit')) {
       res.status(429).json({ error: 'GitHub API rate limit exceeded. Please try again later.' });
     } else {
-      res.status(500).json({ error: 'Failed to analyze repository', details: error.message });
+      res.status(500).json({ 
+        error: 'Failed to analyze repository', 
+        details: error.message,
+        errorType: error.name
+      });
     }
   }
 });

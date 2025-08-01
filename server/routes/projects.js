@@ -19,6 +19,7 @@ if (process.env.OPENAI_API_KEY) {
 // AI Generate endpoint
 router.post('/ai-generate', authenticateToken, async (req, res) => {
   try {
+    console.log('AI Generate request:', { projectName: req.body.projectName, description: req.body.description?.substring(0, 50) });
     const { projectName, description } = req.body;
 
     if (!projectName || !description) {
@@ -26,8 +27,15 @@ router.post('/ai-generate', authenticateToken, async (req, res) => {
     }
 
     // Check if OpenAI API key is available
+    console.log('OpenAI API Key status:', {
+      hasKey: !!process.env.OPENAI_API_KEY,
+      keyValue: process.env.OPENAI_API_KEY?.substring(0, 10) + '...',
+      isDummy: process.env.OPENAI_API_KEY === 'dummy'
+    });
+    
     if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'dummy') {
       // Return a mock AI-generated response
+      console.log('Using mock AI response');
       const mockResponse = generateMockAIResponse(projectName, description);
       return res.json(mockResponse);
     }
@@ -51,7 +59,10 @@ Please return a JSON object with the following structure:
 
 Make the content professional, engaging, and marketplace-ready. Generate realistic GitHub URLs with the pattern https://github.com/username/reponame.`;
 
+    console.log('OpenAI client status:', { hasOpenaiClient: !!openai });
+    
     if (!openai) {
+      console.log('OpenAI client is null, returning service unavailable');
       return res.status(503).json({ 
         error: 'AI service unavailable', 
         message: 'OpenAI API key not configured' 
@@ -85,8 +96,19 @@ Make the content professional, engaging, and marketplace-ready. Generate realist
     }
 
   } catch (error) {
-    console.error('AI Generate error:', error);
-    res.status(500).json({ error: 'Failed to generate content' });
+    console.error('AI Generate error:', error.message);
+    console.error('AI Generate error stack:', error.stack);
+    console.error('AI Generate error details:', {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      response: error.response?.data
+    });
+    res.status(500).json({ 
+      error: 'Failed to generate content',
+      details: error.message,
+      errorType: error.name
+    });
   }
 });
 
