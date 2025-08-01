@@ -596,7 +596,8 @@ function extractTags(basic, content) {
   
   // Add topics
   if (basic?.topics) {
-  basic.topics.forEach(topic => tags.add(topic));
+    basic.topics.forEach(topic => tags.add(topic));
+  }
   
   // Add primary language
   if (basic.language) {

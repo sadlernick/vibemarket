@@ -123,7 +123,7 @@ app.get('/api/health', (req, res) => {
 
 // For Vercel serverless functions, we export the app
 // For local development, we listen on the port
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });

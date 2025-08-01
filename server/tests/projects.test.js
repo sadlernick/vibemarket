@@ -36,7 +36,7 @@ describe('Projects API', () => {
 
     // Generate auth token
     authToken = jwt.sign(
-      { _id: testUser._id, username: testUser.username, role: testUser.role },
+      { userId: testUser._id, username: testUser.username, role: testUser.role },
       process.env.JWT_SECRET || 'test-secret'
     );
 
@@ -86,7 +86,11 @@ describe('Projects API', () => {
         author: testUser._id,
         category: 'web',
         status: 'draft',
-        isActive: false
+        isActive: false,
+        license: {
+          type: 'free',
+          price: 0
+        }
       });
       await draftProject.save();
 
@@ -105,7 +109,11 @@ describe('Projects API', () => {
         description: 'A mobile project',
         author: testUser._id,
         category: 'mobile',
-        status: 'published'
+        status: 'published',
+        license: {
+          type: 'free',
+          price: 0
+        }
       });
       await mobileProject.save();
 
@@ -229,7 +237,11 @@ describe('Projects API', () => {
         author: testUser._id,
         category: 'web',
         status: 'draft',
-        isActive: false
+        isActive: false,
+        license: {
+          type: 'free',
+          price: 0
+        }
       });
       await draft.save();
 
@@ -258,7 +270,11 @@ describe('Projects API', () => {
         description: 'Another user draft',
         author: otherUser._id,
         category: 'web',
-        status: 'draft'
+        status: 'draft',
+        license: {
+          type: 'free',
+          price: 0
+        }
       });
       await otherDraft.save();
 
@@ -320,7 +336,11 @@ describe('Projects API', () => {
         category: 'web',
         tags: ['react', 'dashboard', 'charts'],
         tech_stack: ['React', 'Chart.js'],
-        status: 'published'
+        status: 'published',
+        license: {
+          type: 'free',
+          price: 0
+        }
       });
       await reactProject.save();
 
@@ -331,7 +351,11 @@ describe('Projects API', () => {
         category: 'mobile',
         tags: ['flutter', 'chat', 'mobile'],
         tech_stack: ['Flutter', 'Firebase'],
-        status: 'published'
+        status: 'published',
+        license: {
+          type: 'free',
+          price: 0
+        }
       });
       await mobileProject.save();
 

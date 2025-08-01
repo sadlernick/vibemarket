@@ -12,6 +12,17 @@ beforeAll(async () => {
   }
 });
 
+// Clean database before each test
+beforeEach(async () => {
+  if (mongoose.connection.readyState !== 0) {
+    const collections = mongoose.connection.collections;
+    for (const key in collections) {
+      const collection = collections[key];
+      await collection.deleteMany({});
+    }
+  }
+});
+
 afterAll(async () => {
   if (mongod) {
     await mongod.stop();

@@ -25,6 +25,10 @@
       "destination": "/api/github-auth.js"
     },
     {
+      "source": "/api/github/repositories",
+      "destination": "/api/index.js"
+    },
+    {
       "source": "/api/dashboard",
       "destination": "/api/index.js"
     },

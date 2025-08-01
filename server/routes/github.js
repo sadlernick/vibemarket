@@ -226,10 +226,20 @@ router.post('/verify-repository', authenticateToken, async (req, res) => {
 // Get user's GitHub repositories
 router.get('/repositories', authenticateToken, async (req, res) => {
   try {
+    console.log('GitHub repositories request from user:', req.user._id);
+    
     const user = await User.findById(req.user._id);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
 
     if (!user.githubProfile?.accessToken) {
-      return res.status(400).json({ error: 'GitHub account not connected' });
+      console.log('User does not have GitHub connected');
+      return res.status(400).json({ 
+        error: 'GitHub account not connected',
+        message: 'Please connect your GitHub account to access repositories'
+      });
     }
 
     const { page = 1, per_page = 30, type = 'all' } = req.query;
