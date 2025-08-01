@@ -7,22 +7,42 @@
       "maxDuration": 30
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/test",
-      "dest": "/api/test.js"
+      "source": "/api/health",
+      "destination": "/api/health.js"
     },
     {
-      "src": "/api/health",
-      "dest": "/api/health.js"
+      "source": "/api/auth/debug",
+      "destination": "/api/test-debug.js"
     },
     {
-      "src": "/api/(.*)",
-      "dest": "/api/index.js"
+      "source": "/api/auth/(.*)",
+      "destination": "/api/test-auth.js"
     },
     {
-      "src": "/(.*)",
-      "dest": "/public/$1"
+      "source": "/api/github/oauth/callback",
+      "destination": "/api/github-callback.js"
+    },
+    {
+      "source": "/api/github/oauth/(.*)",
+      "destination": "/api/github-auth.js"
+    },
+    {
+      "source": "/api/dashboard",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/api/dashboard/(.*)",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }

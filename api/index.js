@@ -41,6 +41,19 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Database connection middleware for serverless
+app.use(async (req, res, next) => {
+    try {
+        if (!cachedConnection) {
+            await connectToDatabase();
+        }
+        next();
+    } catch (error) {
+        console.error('Database connection error:', error);
+        res.status(500).json({ error: 'Database connection failed' });
+    }
+});
+
 // Session configuration
 app.use(session({
     secret: process.env.JWT_SECRET || 'fallback-secret',
@@ -77,22 +90,23 @@ async function connectToDatabase() {
     }
 }
 
-// Routes - Note: Vercel routes to /api/* so we don't need /api prefix here
-app.use('/auth', authRoutes);
-app.use('/', authRoutes); // For /users/:id route
-app.use('/projects', projectRoutes);
-app.use('/licenses', licenseRoutes);
-app.use('/reviews', reviewRoutes);
-app.use('/sandbox', sandboxRoutes);
-app.use('/admin', adminRoutes);
-app.use('/ai', aiRoutes);
-app.use('/payments', paymentRoutes);
-app.use('/dashboard', dashboardRoutes);
-app.use('/tools', toolsRoutes);
-app.use('/github', githubRoutes);
-app.use('/verification', verificationRoutes);
+// Routes - Vercel routes include /api prefix, so we need to handle full paths
+app.use('/api/auth', authRoutes);
+app.use('/api', authRoutes); // For /users/:id route
+app.use('/api/projects', projectRoutes);
+app.use('/api/licenses', licenseRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/sandbox', sandboxRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/tools', toolsRoutes);
+app.use('/api/github', githubRoutes);
+app.use('/api/verification', verificationRoutes);
 
-app.get('/health', async (req, res) => {
+
+app.get('/api/health', async (req, res) => {
     const health = {
         status: 'ok', 
         timestamp: new Date().toISOString(),
@@ -115,7 +129,7 @@ app.get('/health', async (req, res) => {
 });
 
 // Root route
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
     res.json({ message: 'PackCode API is running!' });
 });
 
@@ -129,22 +143,4 @@ app.use((err, req, res, next) => {
 });
 
 // For Vercel serverless functions
-module.exports = async (req, res) => {
-    // Don't require database connection for all routes
-    // Let individual routes handle database connections as needed
-    try {
-        // Try to connect to database, but don't fail if it doesn't work
-        if (!cachedConnection) {
-            await connectToDatabase().catch(err => {
-                console.warn('Database connection failed, continuing without DB:', err.message);
-            });
-        }
-        return app(req, res);
-    } catch (error) {
-        console.error('Server error:', error);
-        res.status(500).json({ 
-            error: 'Server error',
-            message: error.message 
-        });
-    }
-};
+module.exports = app;
