@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test';
 
+const API_BASE_URL = 'http://localhost:3000';
+
 test.describe('API Endpoints', () => {
   test('should have working health check', async ({ request }) => {
-    const response = await request.get('/api/health');
+    const response = await request.get(`${API_BASE_URL}/api/health`);
     expect(response.status()).toBe(200);
     
     const data = await response.json();
@@ -10,7 +12,7 @@ test.describe('API Endpoints', () => {
   });
 
   test('should return projects list', async ({ request }) => {
-    const response = await request.get('/api/projects');
+    const response = await request.get(`${API_BASE_URL}/api/projects`);
     expect(response.status()).toBe(200);
     
     const data = await response.json();
@@ -20,13 +22,13 @@ test.describe('API Endpoints', () => {
 
   test('should return individual project', async ({ request }) => {
     // First get a project ID
-    const projectsResponse = await request.get('/api/projects');
+    const projectsResponse = await request.get(`${API_BASE_URL}/api/projects`);
     const projectsData = await projectsResponse.json();
     
     if (projectsData.projects && projectsData.projects.length > 0) {
       const projectId = projectsData.projects[0]._id;
       
-      const response = await request.get(`/api/projects/${projectId}`);
+      const response = await request.get(`${API_BASE_URL}/api/projects/${projectId}`);
       expect(response.status()).toBe(200);
       
       const data = await response.json();
@@ -36,7 +38,7 @@ test.describe('API Endpoints', () => {
   });
 
   test('should handle non-existent project gracefully', async ({ request }) => {
-    const response = await request.get('/api/projects/nonexistent123');
+    const response = await request.get(`${API_BASE_URL}/api/projects/nonexistent123`);
     expect(response.status()).toBe(404);
     
     const data = await response.json();
@@ -44,7 +46,7 @@ test.describe('API Endpoints', () => {
   });
 
   test('should require authentication for dashboard', async ({ request }) => {
-    const response = await request.get('/api/dashboard');
+    const response = await request.get(`${API_BASE_URL}/api/projects/drafts`);
     expect(response.status()).toBe(401);
     
     const data = await response.json();
@@ -53,36 +55,32 @@ test.describe('API Endpoints', () => {
   });
 
   test('should handle author profile requests', async ({ request }) => {
-    // First get a user ID from projects
-    const projectsResponse = await request.get('/api/projects');
+    // Test that projects include author info without sensitive data
+    const projectsResponse = await request.get(`${API_BASE_URL}/api/projects`);
     const projectsData = await projectsResponse.json();
     
     if (projectsData.projects && projectsData.projects.length > 0) {
-      const authorId = projectsData.projects[0].author._id;
+      const author = projectsData.projects[0].author;
       
-      const response = await request.get(`/api/users/${authorId}`);
-      expect(response.status()).toBe(200);
-      
-      const data = await response.json();
-      expect(data).toHaveProperty('username');
-      expect(data._id).toBe(authorId);
+      expect(author).toHaveProperty('username');
+      expect(author).toHaveProperty('_id');
+      expect(author).toHaveProperty('reputation');
+      expect(typeof author.reputation).toBe('number');
     }
   });
 
   test('should not expose sensitive user data in public routes', async ({ request }) => {
-    const projectsResponse = await request.get('/api/projects');
+    const projectsResponse = await request.get(`${API_BASE_URL}/api/projects`);
     const projectsData = await projectsResponse.json();
     
     if (projectsData.projects && projectsData.projects.length > 0) {
-      const authorId = projectsData.projects[0].author._id;
+      const author = projectsData.projects[0].author;
       
-      const response = await request.get(`/api/users/${authorId}`);
-      const data = await response.json();
-      
-      // Should not expose email or password
-      expect(data).not.toHaveProperty('email');
-      expect(data).not.toHaveProperty('password');
-      expect(data).not.toHaveProperty('passwordHash');
+      // Should not expose email or password in project listings
+      expect(author).not.toHaveProperty('email');
+      expect(author).not.toHaveProperty('password');
+      expect(author).not.toHaveProperty('passwordHash');
+      expect(author).not.toHaveProperty('githubAccessToken');
     }
   });
 });

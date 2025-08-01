@@ -45,7 +45,7 @@ interface AuthProviderProps {
 // Configure axios defaults
 axios.defaults.baseURL = process.env.NODE_ENV === 'production' 
   ? '/api' 
-  : 'http://localhost:5001/api';
+  : 'http://localhost:3000/api';
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);

@@ -1,5 +1,51 @@
 # Page snapshot
 
 ```yaml
-- iframe
+- navigation:
+  - link "PackCode":
+    - /url: /
+  - link "Find Projects":
+    - /url: /find-projects
+  - link "Post Projects":
+    - /url: /post-projects
+  - link "Tutorials":
+    - /url: /tutorials
+  - link "Idea Generator":
+    - /url: /tools/idea-generator
+  - link "Sign in":
+    - /url: /login
+  - link "Get Started":
+    - /url: /register
+- main:
+  - heading "Find Projects" [level=1]
+  - paragraph: Discover amazing projects from the vibe coder pack. Browse freely, login to interact.
+  - textbox "Search projects... (e.g., 'I need a React component for user authentication')"
+  - button "AI Smart Search" [disabled]
+  - combobox:
+    - option "All Categories" [selected]
+    - option "Web Apps"
+    - option "Mobile Apps"
+    - option "Desktop Apps"
+    - option "APIs"
+    - option "Libraries"
+    - option "Tools"
+    - option "Games"
+    - option "Other"
+  - combobox:
+    - option "Newest First" [selected]
+    - option "Most Viewed"
+    - option "Most Downloaded"
+    - option "Highest Rated"
+    - 'option "Price: Low to High"'
+  - button
+  - img
+  - heading "Something went wrong" [level=3]
+  - paragraph: Server error
+  - button "Try Again"
+  - heading "Ready to dive deeper?" [level=3]
+  - paragraph: Sign up to run demos, view source code, purchase licenses, and join the pack.
+  - link "Sign Up Free":
+    - /url: /register
+  - link "Sign In":
+    - /url: /login
 ```

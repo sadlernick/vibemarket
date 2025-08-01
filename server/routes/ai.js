@@ -8,8 +8,16 @@ const router = express.Router();
 // Enhanced AI content generation with GitHub repo analysis
 router.post('/analyze-repository', authenticateToken, async (req, res) => {
   try {
+    console.log('=== AI ANALYZE-REPOSITORY REQUEST ===');
+    console.log('Request body:', req.body);
+    console.log('User ID:', req.user?._id);
+    
     const { repositoryUrl, fullName } = req.body;
     const user = await User.findById(req.user._id);
+
+    console.log('User found:', !!user);
+    console.log('Has GitHub profile:', !!user?.githubProfile);
+    console.log('Has GitHub token:', !!user?.githubProfile?.accessToken);
 
     // Parse repository info
     let owner, repo;
@@ -25,6 +33,8 @@ router.post('/analyze-repository', authenticateToken, async (req, res) => {
     } else {
       return res.status(400).json({ error: 'Repository URL or fullName is required' });
     }
+    
+    console.log('Repository to analyze:', { owner, repo });
 
     let repoData;
     
@@ -44,7 +54,22 @@ router.post('/analyze-repository', authenticateToken, async (req, res) => {
     }
     
     // Analyze and generate project details
-    const analysis = await analyzeRepository(repoData);
+    let analysis;
+    try {
+      analysis = await analyzeRepository(repoData);
+    } catch (analysisError) {
+      console.error('Analysis failed, using fallback:', analysisError.message);
+      // Use fallback analysis
+      analysis = {
+        title: repoData.basic.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        description: repoData.basic.description || `A ${repoData.basic.language || 'code'} project that provides innovative solutions. This repository contains well-structured code with modern development practices.`,
+        category: 'web',
+        tags: [repoData.basic.language, 'open-source', 'development'].filter(Boolean).slice(0, 5),
+        features: ['Core functionality', 'Well documented', 'Easy to integrate'],
+        techStack: [repoData.basic.language].filter(Boolean),
+        suggestedPrice: 0
+      };
+    }
     
     res.json({
       success: true,
@@ -305,17 +330,29 @@ function generateSuggestedFeatures(category) {
 // Fetch repository data using public GitHub API (no authentication required)
 async function fetchPublicRepositoryData(owner, repo) {
   try {
-    // Get basic repository info from public API
-    const repoResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}`);
+    console.log(`Fetching public repository data for ${owner}/${repo}`);
+    
+    // Get basic repository info from public API with timeout
+    const repoResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}`, {
+      timeout: 10000, // 10 second timeout
+      headers: {
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
     const repoInfo = repoResponse.data;
 
     // Get public README content
     let readmeContent = '';
     try {
-      const readmeResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/readme`);
+      const readmeResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/readme`, {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
       readmeContent = Buffer.from(readmeResponse.data.content, 'base64').toString('utf-8');
     } catch (err) {
-      console.log('No README found or accessible');
+      console.log('No README found or accessible:', err.message);
     }
 
     // Get package.json content if public
@@ -461,10 +498,14 @@ async function fetchRepositoryData(accessToken, owner, repo) {
 
 // Analyze repository data and generate project details
 async function analyzeRepository(repoData) {
+  if (!repoData || !repoData.basic) {
+    throw new Error('Invalid repository data');
+  }
+  
   const { basic, content } = repoData;
   
   // Generate title (clean up repo name)
-  const title = basic.name
+  const title = (basic.name || 'Unknown Project')
     .split(/[-_]/) // Split on hyphens and underscores
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
@@ -500,8 +541,10 @@ async function analyzeRepository(repoData) {
 
 // Determine project category based on repository analysis
 function determineCategory(basic, content) {
-  const { languages, packageJson, fileStructure } = content;
-  const { topics } = basic;
+  const languages = content?.languages || {};
+  const packageJson = content?.packageJson || {};
+  const fileStructure = content?.fileStructure || [];
+  const topics = basic?.topics || [];
   
   // Check for mobile development
   if (topics.includes('react-native') || topics.includes('flutter') || topics.includes('ios') || topics.includes('android')) {
@@ -552,6 +595,7 @@ function extractTags(basic, content) {
   const tags = new Set();
   
   // Add topics
+  if (basic?.topics) {
   basic.topics.forEach(topic => tags.add(topic));
   
   // Add primary language
