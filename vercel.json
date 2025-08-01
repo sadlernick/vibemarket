@@ -41,6 +41,10 @@
       "destination": "/api/ai-analyze.js"
     },
     {
+      "source": "/api/analyze-repo",
+      "destination": "/api/ai-analyze.js"
+    },
+    {
       "source": "/api/dashboard",
       "destination": "/api/index.js"
     },

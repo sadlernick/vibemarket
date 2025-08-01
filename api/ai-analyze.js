@@ -64,7 +64,7 @@ app.use(async (req, res, next) => {
 // Simplified AI analyze-repository endpoint
 app.post('/analyze-repository', authenticateToken, async (req, res) => {
     try {
-        console.log('=== DEDICATED AI ANALYZE ENDPOINT ===');
+        console.log('=== DEDICATED AI ANALYZE ENDPOINT (analyze-repository) ===');
         console.log('Request body:', JSON.stringify(req.body));
         console.log('User ID:', req.user?._id);
         
@@ -85,12 +85,12 @@ app.post('/analyze-repository', authenticateToken, async (req, res) => {
         // Mock analysis for now to avoid external API issues
         const mockAnalysis = {
             title: repo.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-            description: `**${repo}** is a well-crafted project providing essential functionality for developers. This project demonstrates professional-grade architecture and user experience design.\n\n🚀 **Key Features:**\n- Modern development stack and best practices\n- Scalable architecture for future growth\n- Cross-platform compatibility\n\n✨ **Developer Experience:**\n- Comprehensive documentation with examples\n- Easy integration and setup\n- Regular updates and maintenance\n- Active community support\n\nPerfect for developers seeking reliable solutions or teams looking to accelerate development.`,
+            description: `**${repo}** is a well-crafted project providing essential functionality for developers.`,
             category: 'web',
-            tags: ['javascript', 'typescript', 'react', 'opensource', 'development'],
+            tags: ['javascript', 'typescript', 'react'],
             features: {
-                freeFeatures: ['View source code', 'Basic documentation', 'Personal use license'],
-                paidFeatures: ['Commercial license', 'Extended examples', 'Priority support']
+                freeFeatures: ['View source code', 'Basic documentation'],
+                paidFeatures: ['Commercial license', 'Extended examples']
             },
             techStack: 'JavaScript, TypeScript, React',
             suggestedPrice: 75
@@ -99,19 +99,9 @@ app.post('/analyze-repository', authenticateToken, async (req, res) => {
         res.json({
             success: true,
             repository: {
-                id: 12345,
                 fullName,
                 name: repo,
-                description: `Mock repository for ${fullName}`,
-                language: 'JavaScript',
-                stars: 1000,
-                forks: 100,
-                topics: ['javascript', 'react'],
-                license: 'MIT License',
-                defaultBranch: 'main',
-                updatedAt: new Date().toISOString(),
-                createdAt: '2020-01-01T00:00:00Z',
-                htmlUrl: `https://github.com/${fullName}`
+                description: `Mock repository for ${fullName}`
             },
             analysis: mockAnalysis
         });
@@ -126,6 +116,34 @@ app.post('/analyze-repository', authenticateToken, async (req, res) => {
             error: 'Failed to analyze repository',
             details: error.message,
             timestamp: new Date().toISOString()
+        });
+    }
+});
+
+// Alternative endpoint with different path
+app.post('/analyze-repo', authenticateToken, async (req, res) => {
+    try {
+        console.log('=== ALTERNATIVE AI ANALYZE ENDPOINT ===');
+        console.log('Request body:', JSON.stringify(req.body));
+        console.log('User ID:', req.user?._id);
+        
+        const { fullName } = req.body;
+        const [owner, repo] = fullName.split('/');
+        
+        res.json({
+            success: true,
+            message: 'Alternative AI endpoint working',
+            fullName,
+            owner,
+            repo,
+            timestamp: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('Alternative AI endpoint error:', error);
+        res.status(500).json({
+            error: 'Alternative AI endpoint failed',
+            details: error.message
         });
     }
 });
