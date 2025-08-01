@@ -38,20 +38,31 @@ router.post('/analyze-repository', authenticateToken, async (req, res) => {
 
     let repoData;
     
-    // Try to fetch repository data with GitHub token if available
-    if (user.githubProfile?.accessToken) {
-      try {
-        repoData = await fetchRepositoryData(user.githubProfile.accessToken, owner, repo);
-      } catch (githubError) {
-        console.warn('GitHub API failed, falling back to public analysis:', githubError.message);
-        // Fall back to public repository analysis
+    // Add overall timeout for serverless functions
+    const fetchWithTimeout = async () => {
+      // Try to fetch repository data with GitHub token if available
+      if (user.githubProfile?.accessToken) {
+        try {
+          repoData = await fetchRepositoryData(user.githubProfile.accessToken, owner, repo);
+        } catch (githubError) {
+          console.warn('GitHub API failed, falling back to public analysis:', githubError.message);
+          // Fall back to public repository analysis
+          repoData = await fetchPublicRepositoryData(owner, repo);
+        }
+      } else {
+        // User has no GitHub account connected, use public data only
+        console.log('No GitHub token, using public repository analysis');
         repoData = await fetchPublicRepositoryData(owner, repo);
       }
-    } else {
-      // User has no GitHub account connected, use public data only
-      console.log('No GitHub token, using public repository analysis');
-      repoData = await fetchPublicRepositoryData(owner, repo);
-    }
+      return repoData;
+    };
+    
+    // Timeout after 10 seconds total for serverless
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Repository analysis timed out')), 10000);
+    });
+    
+    repoData = await Promise.race([fetchWithTimeout(), timeoutPromise]);
     
     // Analyze and generate project details
     let analysis;
@@ -332,9 +343,9 @@ async function fetchPublicRepositoryData(owner, repo) {
   try {
     console.log(`Fetching public repository data for ${owner}/${repo}`);
     
-    // Get basic repository info from public API with timeout
+    // Get basic repository info from public API with shorter timeout for serverless
     const repoResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}`, {
-      timeout: 10000, // 10 second timeout
+      timeout: 5000, // 5 second timeout for serverless
       headers: {
         'Accept': 'application/vnd.github.v3+json'
       }
@@ -345,7 +356,7 @@ async function fetchPublicRepositoryData(owner, repo) {
     let readmeContent = '';
     try {
       const readmeResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/readme`, {
-        timeout: 10000,
+        timeout: 3000, // Shorter timeout for README
         headers: {
           'Accept': 'application/vnd.github.v3+json'
         }
@@ -355,33 +366,43 @@ async function fetchPublicRepositoryData(owner, repo) {
       console.log('No README found or accessible:', err.message);
     }
 
-    // Get package.json content if public
+    // Get package.json content if public (skip in serverless for speed)
     let packageJson = null;
-    try {
-      const packageResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/contents/package.json`);
-      const packageContent = Buffer.from(packageResponse.data.content, 'base64').toString('utf-8');
-      packageJson = JSON.parse(packageContent);
-    } catch (err) {
-      console.log('No package.json found or accessible');
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        const packageResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/contents/package.json`, {
+          timeout: 3000
+        });
+        const packageContent = Buffer.from(packageResponse.data.content, 'base64').toString('utf-8');
+        packageJson = JSON.parse(packageContent);
+      } catch (err) {
+        console.log('No package.json found or accessible');
+      }
     }
 
-    // Get repository file structure (top level)
+    // Get repository file structure (skip in serverless for speed)
     let fileStructure = [];
-    try {
-      const contentsResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/contents`);
-      fileStructure = contentsResponse.data.map(item => ({
-        name: item.name,
-        type: item.type,
-        size: item.size
-      }));
-    } catch (err) {
-      console.log('Could not fetch file structure');
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        const contentsResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/contents`, {
+          timeout: 3000
+        });
+        fileStructure = contentsResponse.data.map(item => ({
+          name: item.name,
+          type: item.type,
+          size: item.size
+        }));
+      } catch (err) {
+        console.log('Could not fetch file structure');
+      }
     }
 
     // Get languages used
     let languages = {};
     try {
-      const languagesResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/languages`);
+      const languagesResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/languages`, {
+        timeout: 3000
+      });
       languages = languagesResponse.data;
     } catch (err) {
       console.log('Could not fetch languages');
