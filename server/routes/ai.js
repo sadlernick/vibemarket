@@ -11,10 +11,6 @@ router.post('/analyze-repository', authenticateToken, async (req, res) => {
     const { repositoryUrl, fullName } = req.body;
     const user = await User.findById(req.user._id);
 
-    if (!user.githubProfile?.accessToken) {
-      return res.status(400).json({ error: 'GitHub account not connected' });
-    }
-
     // Parse repository info
     let owner, repo;
     if (fullName) {
@@ -30,8 +26,22 @@ router.post('/analyze-repository', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Repository URL or fullName is required' });
     }
 
-    // Fetch repository data
-    const repoData = await fetchRepositoryData(user.githubProfile.accessToken, owner, repo);
+    let repoData;
+    
+    // Try to fetch repository data with GitHub token if available
+    if (user.githubProfile?.accessToken) {
+      try {
+        repoData = await fetchRepositoryData(user.githubProfile.accessToken, owner, repo);
+      } catch (githubError) {
+        console.warn('GitHub API failed, falling back to public analysis:', githubError.message);
+        // Fall back to public repository analysis
+        repoData = await fetchPublicRepositoryData(owner, repo);
+      }
+    } else {
+      // User has no GitHub account connected, use public data only
+      console.log('No GitHub token, using public repository analysis');
+      repoData = await fetchPublicRepositoryData(owner, repo);
+    }
     
     // Analyze and generate project details
     const analysis = await analyzeRepository(repoData);
@@ -51,7 +61,16 @@ router.post('/analyze-repository', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Repository analysis error:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Failed to analyze repository' });
+    console.error('Error stack:', error.stack);
+    
+    // Return a more specific error message
+    if (error.message.includes('Not Found')) {
+      res.status(404).json({ error: 'Repository not found or not accessible' });
+    } else if (error.message.includes('rate limit')) {
+      res.status(429).json({ error: 'GitHub API rate limit exceeded. Please try again later.' });
+    } else {
+      res.status(500).json({ error: 'Failed to analyze repository', details: error.message });
+    }
   }
 });
 
@@ -269,6 +288,82 @@ function generateSuggestedFeatures(category) {
   };
 
   return features[category] || features.other;
+}
+
+// Fetch repository data using public GitHub API (no authentication required)
+async function fetchPublicRepositoryData(owner, repo) {
+  try {
+    // Get basic repository info from public API
+    const repoResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}`);
+    const repoInfo = repoResponse.data;
+
+    // Get public README content
+    let readmeContent = '';
+    try {
+      const readmeResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/readme`);
+      readmeContent = Buffer.from(readmeResponse.data.content, 'base64').toString('utf-8');
+    } catch (err) {
+      console.log('No README found or accessible');
+    }
+
+    // Get package.json content if public
+    let packageJson = null;
+    try {
+      const packageResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/contents/package.json`);
+      const packageContent = Buffer.from(packageResponse.data.content, 'base64').toString('utf-8');
+      packageJson = JSON.parse(packageContent);
+    } catch (err) {
+      console.log('No package.json found or accessible');
+    }
+
+    // Get repository file structure (top level)
+    let fileStructure = [];
+    try {
+      const contentsResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/contents`);
+      fileStructure = contentsResponse.data.map(item => ({
+        name: item.name,
+        type: item.type,
+        size: item.size
+      }));
+    } catch (err) {
+      console.log('Could not fetch file structure');
+    }
+
+    // Get languages used
+    let languages = {};
+    try {
+      const languagesResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/languages`);
+      languages = languagesResponse.data;
+    } catch (err) {
+      console.log('Could not fetch languages');
+    }
+
+    return {
+      basic: {
+        id: repoInfo.id,
+        fullName: repoInfo.full_name,
+        name: repoInfo.name,
+        description: repoInfo.description,
+        language: repoInfo.language,
+        stars: repoInfo.stargazers_count,
+        forks: repoInfo.forks_count,
+        topics: repoInfo.topics || [],
+        license: repoInfo.license?.name || null,
+        defaultBranch: repoInfo.default_branch,
+        updatedAt: repoInfo.updated_at,
+        createdAt: repoInfo.created_at,
+        htmlUrl: repoInfo.html_url
+      },
+      content: {
+        readme: readmeContent,
+        packageJson,
+        fileStructure,
+        languages
+      }
+    };
+  } catch (error) {
+    throw new Error(`Failed to fetch public repository data: ${error.message}`);
+  }
 }
 
 // Fetch comprehensive repository data from GitHub API
