@@ -46,11 +46,8 @@ const Navbar: React.FC = () => {
               <img 
                 src="/pack-code-logo.png" 
                 alt="PackCode" 
-                className="h-10 w-10 mr-2"
+                className="h-12 w-auto mr-3"
               />
-              <span className="text-2xl font-bold text-gray-900">
-                PackCode
-              </span>
             </Link>
 
             {/* Navigation Links */}

@@ -55,13 +55,10 @@ const Home: React.FC = () => {
               <img 
                 src="/pack-code-logo.png" 
                 alt="PackCode Logo" 
-                className="h-24 w-24 md:h-32 md:w-32 mx-auto animate-pulse"
+                className="h-32 md:h-40 w-auto mx-auto"
               />
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-              <span className="block bg-gradient-to-r from-yellow-400 to-pink-400 bg-clip-text text-transparent">
-                PackCode
-              </span>
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
               The marketplace for vibe coders
             </h1>
             <p className="text-xl text-purple-100 mb-8 max-w-3xl mx-auto">
