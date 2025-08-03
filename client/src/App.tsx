@@ -20,6 +20,10 @@ import DraftProjects from './pages/DraftProjects';
 import AuthorProfile from './pages/AuthorProfile';
 import ProjectIdeaGenerator from './pages/ProjectIdeaGenerator';
 import BuildYourFirst from './pages/BuildYourFirst';
+import Blog from './pages/Blog';
+import BlogPost from './pages/BlogPost';
+import BlogAdmin from './pages/BlogAdmin';
+import BlogEditor from './pages/BlogEditor';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 
 function App() {
@@ -45,7 +49,8 @@ function App() {
               <Route path="/project/:id" element={<ProjectDetail />} />
               <Route path="/author/:id" element={<AuthorProfile />} />
               <Route path="/tools/idea-generator" element={<ProjectIdeaGenerator />} />
-              <Route path="/tutorials" element={<BuildYourFirst />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/auth/success" element={<AuthSuccess />} />
@@ -99,6 +104,30 @@ function App() {
                 element={
                   <ProtectedRoute requireAdmin>
                     <AdminDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/blog" 
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <BlogAdmin />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/blog/new" 
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <BlogEditor />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/blog/edit/:id" 
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <BlogEditor />
                   </ProtectedRoute>
                 } 
               />

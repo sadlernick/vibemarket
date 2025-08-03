@@ -1,32 +1,7 @@
-// Dedicated serverless function for AI analyze-repository
-const express = require('express');
-const cors = require('cors');
+// Vercel serverless function for AI analyze-repository
 const mongoose = require('mongoose');
 const { authenticateToken } = require('../server/middleware/auth');
 const User = require('../server/models/User');
-
-const app = express();
-
-// CORS configuration
-app.use(cors({
-    origin: function(origin, callback) {
-        const allowedOrigins = [
-            'http://localhost:3001',
-            'http://localhost:3000',
-            process.env.CLIENT_URL?.trim(),
-            'https://www.pack-code.com'
-        ].filter(Boolean);
-        
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true
-}));
-
-app.use(express.json({ limit: '50mb' }));
 
 // Database connection
 let cachedConnection = null;
@@ -49,35 +24,77 @@ async function connectToDatabase() {
     return connection;
 }
 
-app.use(async (req, res, next) => {
+module.exports = async (req, res) => {
     try {
-        if (!cachedConnection) {
-            await connectToDatabase();
+        // Set CORS headers
+        const allowedOrigins = [
+            'http://localhost:3001',
+            'http://localhost:3000',
+            process.env.CLIENT_URL?.trim(),
+            'https://www.pack-code.com'
+        ].filter(Boolean);
+        
+        const origin = req.headers.origin;
+        if (!origin || allowedOrigins.includes(origin)) {
+            res.setHeader('Access-Control-Allow-Origin', origin || '*');
         }
-        next();
-    } catch (error) {
-        console.error('Database connection error:', error);
-        res.status(500).json({ error: 'Database connection failed' });
-    }
-});
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
 
-// Simplified AI analyze-repository endpoint
-app.post('/analyze-repository', authenticateToken, async (req, res) => {
+        if (req.method === 'OPTIONS') {
+            res.status(200).end();
+            return;
+        }
+
+        // Connect to database
+        await connectToDatabase();
+
+        // Route based on URL path
+        const url = req.url;
+        
+        if (url === '/analyze-repository' || url.endsWith('/analyze-repository')) {
+            return await handleAnalyzeRepository(req, res);
+        } else if (url === '/analyze-repo' || url.endsWith('/analyze-repo')) {
+            return await handleAlternativeAnalyze(req, res);
+        } else if (url === '/no-auth' || url.endsWith('/no-auth')) {
+            return await handleNoAuth(req, res);
+        }
+        
+        res.status(404).json({ error: 'Endpoint not found' });
+        
+    } catch (error) {
+        console.error('Serverless function error:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: 'Something went wrong'
+        });
+    }
+};
+
+// Handle analyze-repository endpoint with authentication
+async function handleAnalyzeRepository(req, res) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    // Authenticate user
+    const authResult = await authenticateUser(req);
+    if (!authResult.success) {
+        return res.status(401).json({ error: authResult.error });
+    }
+
+    const user = authResult.user;
+
     try {
-        console.log('=== DEDICATED AI ANALYZE ENDPOINT (analyze-repository) ===');
+        console.log('=== ANALYZE REPOSITORY ENDPOINT ===');
         console.log('Request body:', JSON.stringify(req.body));
-        console.log('User ID:', req.user?._id);
+        console.log('User ID:', user._id);
         
         const { fullName } = req.body;
         
         if (!fullName) {
             return res.status(400).json({ error: 'fullName is required' });
-        }
-        
-        const user = await User.findById(req.user._id);
-        
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
         }
         
         const [owner, repo] = fullName.split('/');
@@ -107,10 +124,9 @@ app.post('/analyze-repository', authenticateToken, async (req, res) => {
         });
         
     } catch (error) {
-        console.error('=== DEDICATED AI ANALYZE ERROR ===');
+        console.error('=== ANALYZE REPOSITORY ERROR ===');
         console.error('Error message:', error.message);
         console.error('Error stack:', error.stack);
-        console.error('Request headers:', JSON.stringify(req.headers));
         
         res.status(500).json({
             error: 'Failed to analyze repository',
@@ -118,14 +134,26 @@ app.post('/analyze-repository', authenticateToken, async (req, res) => {
             timestamp: new Date().toISOString()
         });
     }
-});
+}
 
-// Alternative endpoint with different path
-app.post('/analyze-repo', authenticateToken, async (req, res) => {
+// Handle alternative analyze endpoint with authentication
+async function handleAlternativeAnalyze(req, res) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    // Authenticate user
+    const authResult = await authenticateUser(req);
+    if (!authResult.success) {
+        return res.status(401).json({ error: authResult.error });
+    }
+
+    const user = authResult.user;
+
     try {
-        console.log('=== ALTERNATIVE AI ANALYZE ENDPOINT ===');
+        console.log('=== ALTERNATIVE ANALYZE ENDPOINT ===');
         console.log('Request body:', JSON.stringify(req.body));
-        console.log('User ID:', req.user?._id);
+        console.log('User ID:', user._id);
         
         const { fullName } = req.body;
         const [owner, repo] = fullName.split('/');
@@ -146,7 +174,53 @@ app.post('/analyze-repo', authenticateToken, async (req, res) => {
             details: error.message
         });
     }
-});
+}
 
-// Export the app
-module.exports = app;
+// Handle no-auth endpoint without authentication
+async function handleNoAuth(req, res) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        console.log('=== NO AUTH ENDPOINT ===');
+        console.log('Request body:', JSON.stringify(req.body));
+        
+        res.json({
+            success: true,
+            message: 'No auth endpoint working',
+            body: req.body,
+            timestamp: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('No auth endpoint error:', error);
+        res.status(500).json({
+            error: 'No auth endpoint failed',
+            details: error.message
+        });
+    }
+}
+
+// Helper function to authenticate user
+async function authenticateUser(req) {
+    try {
+        const token = req.headers.authorization?.replace('Bearer ', '');
+        
+        if (!token) {
+            return { success: false, error: 'No token provided' };
+        }
+
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id);
+        
+        if (!user) {
+            return { success: false, error: 'User not found' };
+        }
+        
+        return { success: true, user };
+    } catch (error) {
+        return { success: false, error: 'Invalid token' };
+    }
+}

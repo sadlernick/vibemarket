@@ -117,43 +117,56 @@ const GitHubFirstProjectCreator: React.FC = () => {
     repo.language?.toLowerCase().includes(repoSearch.toLowerCase())
   );
 
-  // Handle repository selection and analysis
+  // Handle repository selection - skip AI analysis entirely
   const handleRepositorySelect = async (repo: Repository) => {
     setSelectedRepo(repo);
     setError('');
-    setAnalyzing(true);
-    setCurrentStep('analyze');
+    
+    // Skip AI analysis - go straight to manual setup
+    const fallbackAnalysis = {
+      title: repo.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      description: repo.description || `**${repo.name}** is a well-crafted project providing essential functionality for developers.
 
-    try {
-      const response = await axios.post('/ai/analyze-repository', {
-        fullName: repo.fullName
-      });
+🚀 **Key Features:**
+- View and explore the source code
+- Well-documented implementation
+- ${repo.language || 'Modern'} development practices
+- Open source project
 
-      const analysisData = response.data.analysis;
-      setAnalysis(analysisData);
+🛠️ **Technical Details:**
+- Language: ${repo.language || 'Various'}
+- Repository: ${repo.fullName}
+- Stars: ${repo.stars} | Forks: ${repo.forks}
 
-      // Pre-fill form with analysis results
-      setFormData({
-        title: analysisData.title || repo.name,
-        description: analysisData.description || repo.description || '',
-        category: analysisData.category || 'other',
-        tags: analysisData.tags?.join(', ') || '',
-        licenseType: 'freemium',
-        price: analysisData.suggestedPrice || 25,
-        features: {
-          freeFeatures: analysisData.features?.freeFeatures?.join(', ') || '',
-          paidFeatures: analysisData.features?.paidFeatures?.join(', ') || ''
-        },
-        demoUrl: ''
-      });
+Perfect for developers looking to learn from real-world implementations.`,
+      category: 'web',
+      tags: [repo.language, 'open-source', 'github'].filter(Boolean),
+      features: {
+        freeFeatures: ['View source code', 'Basic documentation', 'Personal use license'],
+        paidFeatures: ['Commercial license', 'Priority support', 'Extended examples']
+      },
+      techStack: repo.language || 'JavaScript',
+      suggestedPrice: 25
+    };
+    
+    setAnalysis(fallbackAnalysis);
+    
+    // Pre-fill form with repository data
+    setFormData({
+      title: fallbackAnalysis.title,
+      description: fallbackAnalysis.description,
+      category: fallbackAnalysis.category,
+      tags: fallbackAnalysis.tags.join(', '),
+      licenseType: 'freemium',
+      price: fallbackAnalysis.suggestedPrice,
+      features: {
+        freeFeatures: fallbackAnalysis.features.freeFeatures.join(', '),
+        paidFeatures: fallbackAnalysis.features.paidFeatures.join(', ')
+      },
+      demoUrl: ''
+    });
 
-      setCurrentStep('customize');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to analyze repository');
-      setCurrentStep('select');
-    } finally {
-      setAnalyzing(false);
-    }
+    setCurrentStep('customize');
   };
 
   // Handle form field changes
@@ -296,21 +309,15 @@ const GitHubFirstProjectCreator: React.FC = () => {
       {/* Progress Steps */}
       <div className="mb-8">
         <div className="flex items-center justify-center space-x-8">
-          <div className={`flex items-center ${currentStep === 'select' ? 'text-purple-600' : currentStep === 'analyze' || currentStep === 'customize' || currentStep === 'pricing' ? 'text-green-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 mr-2 ${currentStep === 'select' ? 'border-purple-600 bg-purple-50' : currentStep === 'analyze' || currentStep === 'customize' || currentStep === 'pricing' ? 'border-green-600 bg-green-50' : 'border-gray-300'}`}>
-              {currentStep === 'analyze' || currentStep === 'customize' || currentStep === 'pricing' ? <CheckCircleIcon className="w-5 h-5" /> : '1'}
+          <div className={`flex items-center ${currentStep === 'select' ? 'text-purple-600' : currentStep === 'customize' || currentStep === 'pricing' ? 'text-green-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 mr-2 ${currentStep === 'select' ? 'border-purple-600 bg-purple-50' : currentStep === 'customize' || currentStep === 'pricing' ? 'border-green-600 bg-green-50' : 'border-gray-300'}`}>
+              {currentStep === 'customize' || currentStep === 'pricing' ? <CheckCircleIcon className="w-5 h-5" /> : '1'}
             </div>
             <span className="font-medium text-sm">Select Repository</span>
           </div>
-          <div className={`flex items-center ${currentStep === 'analyze' ? 'text-purple-600' : currentStep === 'customize' || currentStep === 'pricing' ? 'text-green-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 mr-2 ${currentStep === 'analyze' ? 'border-purple-600 bg-purple-50' : currentStep === 'customize' || currentStep === 'pricing' ? 'border-green-600 bg-green-50' : 'border-gray-300'}`}>
-              {currentStep === 'customize' || currentStep === 'pricing' ? <CheckCircleIcon className="w-5 h-5" /> : analyzing ? <ArrowPathIcon className="w-5 h-5 animate-spin" /> : '2'}
-            </div>
-            <span className="font-medium text-sm">AI Analysis</span>
-          </div>
           <div className={`flex items-center ${currentStep === 'customize' || currentStep === 'pricing' ? 'text-purple-600' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 mr-2 ${currentStep === 'customize' || currentStep === 'pricing' ? 'border-purple-600 bg-purple-50' : 'border-gray-300'}`}>
-              3
+              2
             </div>
             <span className="font-medium text-sm">Customize & Publish</span>
           </div>
@@ -388,24 +395,7 @@ const GitHubFirstProjectCreator: React.FC = () => {
         </div>
       )}
 
-      {/* Step 2: Analysis */}
-      {currentStep === 'analyze' && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-          <div className="w-20 h-20 mx-auto bg-purple-100 rounded-full flex items-center justify-center mb-6">
-            <SparklesIcon className="w-10 h-10 text-purple-600 animate-pulse" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Analyzing Repository</h2>
-          <p className="text-gray-600 mb-8">
-            We're analyzing <strong>{selectedRepo?.name}</strong> to generate your project details...
-          </p>
-          <div className="flex items-center justify-center space-x-2">
-            <ArrowPathIcon className="w-5 h-5 animate-spin text-purple-600" />
-            <span className="text-gray-600">This may take a few moments</span>
-          </div>
-        </div>
-      )}
-
-      {/* Step 3: Customize Project */}
+      {/* Step 2: Customize Project */}
       {currentStep === 'customize' && analysis && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="p-6 border-b border-gray-200">

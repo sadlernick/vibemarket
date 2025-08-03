@@ -17,6 +17,7 @@ const dashboardRoutes = require('../server/routes/dashboard');
 const toolsRoutes = require('../server/routes/tools');
 const githubRoutes = require('../server/routes/github');
 const verificationRoutes = require('../server/routes/verification');
+const blogRoutes = require('../server/routes/blog');
 
 const app = express();
 
@@ -28,6 +29,9 @@ app.use(cors({
             'http://localhost:3000',
             process.env.CLIENT_URL
         ].filter(Boolean);
+        
+        // Add production domain
+        allowedOrigins.push('https://www.pack-code.com');
         
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
@@ -104,6 +108,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/tools', toolsRoutes);
 app.use('/api/github', githubRoutes);
 app.use('/api/verification', verificationRoutes);
+app.use('/api/blog', blogRoutes);
 
 
 app.get('/api/health', async (req, res) => {

@@ -17,12 +17,13 @@ const dashboardRoutes = require('./routes/dashboard');
 const toolsRoutes = require('./routes/tools');
 const githubRoutes = require('./routes/github');
 const verificationRoutes = require('./routes/verification');
+const blogRoutes = require('./routes/blog');
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 3001;
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3001',
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true
 }));
 app.use(express.json());
@@ -79,10 +80,10 @@ if (isGoogleConfigured) {
   app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
   app.get('/auth/google/callback', 
-    passport.authenticate('google', { failureRedirect: `${process.env.CLIENT_URL || 'http://localhost:3001'}/login?error=oauth` }),
+    passport.authenticate('google', { failureRedirect: `${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=oauth` }),
     (req, res) => {
       // Successful authentication, redirect to client with user data
-      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3001'}/auth/success?user=${encodeURIComponent(JSON.stringify(req.user))}`);
+      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/auth/success?user=${encodeURIComponent(JSON.stringify(req.user))}`);
     }
   );
 } else {
@@ -94,7 +95,7 @@ if (isGoogleConfigured) {
   });
   
   app.get('/auth/google/callback', (req, res) => {
-    res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3001'}/login?error=oauth`);
+    res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=oauth`);
   });
 }
 
@@ -116,6 +117,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/tools', toolsRoutes);
 app.use('/api/github', githubRoutes);
 app.use('/api/verification', verificationRoutes);
+app.use('/api/blog', blogRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ message: 'PackCode API is running!' });

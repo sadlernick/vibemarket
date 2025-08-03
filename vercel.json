@@ -37,12 +37,16 @@
       "destination": "/api/test-endpoint.js"
     },
     {
-      "source": "/api/ai/analyze-repository",
+      "source": "/api/analyze-repo",
       "destination": "/api/ai-analyze.js"
     },
     {
-      "source": "/api/analyze-repo",
+      "source": "/api/no-auth",
       "destination": "/api/ai-analyze.js"
+    },
+    {
+      "source": "/api/test-no-auth",
+      "destination": "/api/test-no-auth.js"
     },
     {
       "source": "/api/dashboard",

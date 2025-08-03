@@ -35,6 +35,16 @@ const projectSchema = new mongoose.Schema({
       default: false
     }
   },
+  sourceRepository: {
+    fullName: String,
+    url: String,
+    language: String,
+    stars: Number
+  },
+  githubVerified: {
+    type: Boolean,
+    default: false
+  },
   demo: {
     url: {
       type: String,

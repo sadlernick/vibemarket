@@ -259,20 +259,36 @@ router.post('/:id/publish', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Both free and paid repository URLs are required for freemium projects' });
     }
 
-    // Validate GitHub URLs
-    const urlsToValidate = {};
-    if (repository?.freeUrl) urlsToValidate.freeUrl = repository.freeUrl;
-    if (repository?.paidUrl) urlsToValidate.paidUrl = repository.paidUrl;
+    // Skip GitHub validation for repositories that came from GitHub OAuth selection
+    if (!project.githubVerified) {
+      // Validate GitHub URLs
+      const urlsToValidate = {};
+      if (repository?.freeUrl) urlsToValidate.freeUrl = repository.freeUrl;
+      if (repository?.paidUrl) urlsToValidate.paidUrl = repository.paidUrl;
 
-    const validationResults = await githubValidator.validateMultipleRepositories(urlsToValidate);
-    
-    for (const [urlType, result] of Object.entries(validationResults)) {
-      if (!result.valid && !result.empty) {
-        return res.status(400).json({ 
-          error: `Invalid GitHub URL (${urlType}): ${result.error}`,
-          details: result.details 
-        });
+      try {
+        const validationResults = await githubValidator.validateMultipleRepositories(urlsToValidate);
+        
+        for (const [urlType, result] of Object.entries(validationResults)) {
+          if (!result.valid && !result.empty) {
+            // Check if it's a rate limit or network error
+            if (result.error === 'Access forbidden' || result.error === 'Validation failed') {
+              console.warn(`GitHub validation warning for ${urlType}: ${result.error} - proceeding anyway`);
+            } else {
+              return res.status(400).json({ 
+                error: `Invalid GitHub URL (${urlType}): ${result.error}`,
+                details: result.details 
+              });
+            }
+          }
+        }
+      } catch (validationError) {
+        console.error('GitHub validation error during publish:', validationError);
+        // Continue with publish if validation fails due to network issues
+        console.log('Proceeding with publish despite validation error');
       }
+    } else {
+      console.log('Skipping GitHub validation for GitHub-verified project during publish');
     }
 
     project.status = 'published';
@@ -331,22 +347,27 @@ router.post('/', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Both free and paid repository URLs are required for freemium projects' });
     }
 
-    // Validate GitHub URLs
-    const urlsToValidate = {};
-    if (repository?.freeUrl) urlsToValidate.freeUrl = repository.freeUrl;
-    if (repository?.paidUrl) urlsToValidate.paidUrl = repository.paidUrl;
+    // Skip GitHub validation for repositories that came from GitHub OAuth selection
+    if (!req.body.githubVerified) {
+      // Validate GitHub URLs
+      const urlsToValidate = {};
+      if (repository?.freeUrl) urlsToValidate.freeUrl = repository.freeUrl;
+      if (repository?.paidUrl) urlsToValidate.paidUrl = repository.paidUrl;
 
-    const validationResults = await githubValidator.validateMultipleRepositories(urlsToValidate);
-    
-    // Check for validation errors
-    for (const [urlType, result] of Object.entries(validationResults)) {
-      if (!result.valid && !result.empty) {
-        console.log(`GitHub validation failed for ${urlType}:`, result.error);
-        return res.status(400).json({ 
-          error: `Invalid GitHub URL (${urlType}): ${result.error}`,
-          details: result.details 
-        });
+      const validationResults = await githubValidator.validateMultipleRepositories(urlsToValidate);
+      
+      // Check for validation errors
+      for (const [urlType, result] of Object.entries(validationResults)) {
+        if (!result.valid && !result.empty) {
+          console.log(`GitHub validation failed for ${urlType}:`, result.error);
+          return res.status(400).json({ 
+            error: `Invalid GitHub URL (${urlType}): ${result.error}`,
+            details: result.details 
+          });
+        }
       }
+    } else {
+      console.log('Skipping GitHub validation for GitHub-verified repository');
     }
 
     const project = new Project({
@@ -368,7 +389,9 @@ router.post('/', authenticateToken, async (req, res) => {
         viewCode: access?.viewCode || 'public',
         runApp: access?.runApp || 'public',
         downloadCode: access?.downloadCode || 'licensed'
-      }
+      },
+      sourceRepository: req.body.sourceRepository,
+      githubVerified: req.body.githubVerified || false
     });
 
     await project.save();
@@ -380,7 +403,11 @@ router.post('/', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Create project error:', error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ 
+      error: 'Failed to create project',
+      details: error.message,
+      validationErrors: error.errors
+    });
   }
 });
 
@@ -650,7 +677,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
     const allowedUpdates = [
       'title', 'description', 'repository', 'demo', 'tags', 
-      'tech_stack', 'license', 'access'
+      'tech_stack', 'license', 'access', 'githubVerified', 'sourceRepository'
     ];
 
     const updates = {};

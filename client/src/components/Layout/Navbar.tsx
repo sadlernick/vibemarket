@@ -12,7 +12,8 @@ import {
   ChevronDownIcon,
   DocumentTextIcon,
   LightBulbIcon,
-  AcademicCapIcon
+  AcademicCapIcon,
+  DocumentTextIcon as BlogIcon
 } from '@heroicons/react/24/outline';
 
 const Navbar: React.FC = () => {
@@ -28,7 +29,7 @@ const Navbar: React.FC = () => {
   const navigation = [
     { name: 'Find Projects', href: '/find-projects', icon: HomeIcon },
     { name: 'Post Projects', href: '/post-projects', icon: ArrowUpTrayIcon },
-    { name: 'Tutorials', href: '/tutorials', icon: AcademicCapIcon },
+    { name: 'Blog', href: '/blog', icon: BlogIcon },
     { name: 'Idea Generator', href: '/tools/idea-generator', icon: LightBulbIcon },
     ...(user ? [
       { name: 'Dashboard', href: '/dashboard', icon: UserIcon },
