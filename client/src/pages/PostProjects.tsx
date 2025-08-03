@@ -352,35 +352,51 @@ const PostProjects: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           {isEditMode ? 'Edit Project' : 'Post a New Project'}
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-600 mb-8">
           Share your project with the PackCode community and start earning from your code.
         </p>
         
         {/* GitHub-first vs Manual Toggle */}
         {!isEditMode && (
-          <div className="mb-6 flex items-center justify-center space-x-6">
-            <button
-              onClick={() => setUseGitHubFirst(true)}
-              className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                useGitHubFirst 
-                  ? 'bg-purple-600 text-white shadow-md' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              <CodeBracketIcon className="w-5 h-5 inline mr-2" />
-              Create from GitHub (Recommended)
-            </button>
-            <button
-              onClick={() => setUseGitHubFirst(false)}
-              className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                !useGitHubFirst 
-                  ? 'bg-purple-600 text-white shadow-md' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              <DocumentTextIcon className="w-5 h-5 inline mr-2" />
-              Manual Entry
-            </button>
+          <div className="mb-10">
+            <div className="text-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">How would you like to create your project?</h3>
+              <p className="text-sm text-gray-600">Choose your preferred method to get started</p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-2xl mx-auto">
+              <button
+                onClick={() => setUseGitHubFirst(true)}
+                className={`w-full sm:w-auto px-8 py-4 rounded-xl font-medium transition-all duration-200 border-2 ${
+                  useGitHubFirst 
+                    ? 'bg-purple-600 text-white border-purple-600 shadow-lg transform scale-105' 
+                    : 'bg-white text-gray-700 border-gray-200 hover:border-purple-300 hover:bg-purple-50'
+                }`}
+              >
+                <div className="flex items-center justify-center">
+                  <CodeBracketIcon className="w-6 h-6 mr-3" />
+                  <div className="text-left">
+                    <div className="font-semibold">Create from GitHub</div>
+                    <div className="text-xs opacity-90">Recommended • Auto-fills content</div>
+                  </div>
+                </div>
+              </button>
+              <button
+                onClick={() => setUseGitHubFirst(false)}
+                className={`w-full sm:w-auto px-8 py-4 rounded-xl font-medium transition-all duration-200 border-2 ${
+                  !useGitHubFirst 
+                    ? 'bg-purple-600 text-white border-purple-600 shadow-lg transform scale-105' 
+                    : 'bg-white text-gray-700 border-gray-200 hover:border-purple-300 hover:bg-purple-50'
+                }`}
+              >
+                <div className="flex items-center justify-center">
+                  <DocumentTextIcon className="w-6 h-6 mr-3" />
+                  <div className="text-left">
+                    <div className="font-semibold">Manual Entry</div>
+                    <div className="text-xs opacity-90">Full control • Custom setup</div>
+                  </div>
+                </div>
+              </button>
+            </div>
           </div>
         )}
       </div>
