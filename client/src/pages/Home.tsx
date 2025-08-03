@@ -53,7 +53,7 @@ const Home: React.FC = () => {
           <div className="text-center">
             <div className="mb-8">
               <img 
-                src="/pack-code-logo.png" 
+                src="/pack-code-logo-dark.png" 
                 alt="PackCode Logo" 
                 className="h-32 md:h-40 w-auto mx-auto"
               />

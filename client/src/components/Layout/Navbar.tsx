@@ -39,14 +39,14 @@ const Navbar: React.FC = () => {
   return (
     <nav className="bg-white shadow-lg border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between h-20">
           <div className="flex items-center">
             {/* Logo */}
-            <Link to="/" className="flex-shrink-0 flex items-center">
+            <Link to="/" className="flex-shrink-0 flex items-center py-2">
               <img 
                 src="/pack-code-logo.png" 
                 alt="PackCode" 
-                className="h-12 w-auto mr-3"
+                className="h-24 w-auto mr-3"
               />
             </Link>
 
