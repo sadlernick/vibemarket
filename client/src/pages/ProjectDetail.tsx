@@ -149,8 +149,10 @@ const ProjectDetail: React.FC = () => {
   }
 
   const hasAccess = project.license.type === 'free' || userLicense?.isActive;
-  const marketplaceFee = (project.license.price * project.license.marketplaceFeePct) / 100;
-  const sellerEarnings = project.license.price - marketplaceFee;
+  // Calculate what customer actually pays (seller price + marketplace fee)
+  const buyerPrice = project.license.price; // This is what the customer pays
+  const marketplaceFee = (project.license.sellerEarnings * project.license.marketplaceFeePct) / 100;
+  const sellerEarnings = project.license.sellerEarnings;
 
   // Generate SEO-optimized meta data
   const generateSEOData = () => {
@@ -176,6 +178,8 @@ const ProjectDetail: React.FC = () => {
       "name": project.title,
       "description": project.description,
       "category": project.category,
+      "dateCreated": project.createdAt,
+      "dateModified": project.createdAt,
       "author": {
         "@type": "Person",
         "name": project.author.username,
@@ -183,7 +187,8 @@ const ProjectDetail: React.FC = () => {
       },
       "programmingLanguage": project.tags,
       "operatingSystem": "Cross-platform",
-      "applicationCategory": `${project.category} Software`,
+      "applicationCategory": `${project.category.charAt(0).toUpperCase() + project.category.slice(1)} Software`,
+      "keywords": [...project.tags, ...(project.tech_stack || []), project.category].join(', '),
       "aggregateRating": project.stats.stars > 0 ? {
         "@type": "AggregateRating",
         "ratingValue": "4.5",
@@ -204,14 +209,28 @@ const ProjectDetail: React.FC = () => {
         }
       ],
       "url": window.location.href,
-      ...(project.license.type === 'free' ? {
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD",
-          "availability": "https://schema.org/InStock"
-        }
-      } : {})
+      "downloadUrl": project.repository.freeUrl || project.repository.paidUrl,
+      "codeRepository": project.repository.freeUrl || project.repository.paidUrl,
+      "offers": {
+        "@type": "Offer",
+        "price": project.license.type === 'free' ? "0" : project.license.price.toString(),
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock",
+        "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 year from now
+        "seller": {
+          "@type": "Person",
+          "name": project.author.username
+        },
+        "itemCondition": "https://schema.org/NewCondition",
+        "description": project.license.type === 'free' ? "Free and open source" : "Commercial license with full source code access"
+      },
+      "softwareVersion": "1.0",
+      "applicationSuite": "PackCode Marketplace",
+      "featureList": [
+        ...(project.license.features.freeFeatures || []),
+        ...(project.license.features.paidFeatures || [])
+      ].slice(0, 10), // Limit to 10 features for cleaner schema
+      "screenshot": project.demo?.url ? [project.demo.url] : undefined
     };
 
     return { title, description, keywords, structuredData };
@@ -268,7 +287,7 @@ const ProjectDetail: React.FC = () => {
                     ? 'bg-green-100 text-green-800' 
                     : 'bg-purple-100 text-purple-800'
                 }`}>
-                  {project.license.type === 'free' ? 'Free' : `$${project.license.price}`}
+                  {project.license.type === 'free' ? 'Free' : `$${buyerPrice}`}
                 </span>
               </div>
             </div>
@@ -390,6 +409,87 @@ const ProjectDetail: React.FC = () => {
             </div>
           )}
 
+          {/* What You Get Section - SEO Rich Content */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">What You Get</h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="flex items-start">
+                  <CheckCircleIcon className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-medium text-gray-900">Complete Source Code</h4>
+                    <p className="text-sm text-gray-600">Full {project.category} application source code with all files and documentation</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircleIcon className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-medium text-gray-900">Commercial License</h4>
+                    <p className="text-sm text-gray-600">Use in commercial projects, modify, and redistribute as needed</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircleIcon className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-medium text-gray-900">Developer Support</h4>
+                    <p className="text-sm text-gray-600">Direct access to the creator for questions and guidance</p>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-start">
+                  <CheckCircleIcon className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-medium text-gray-900">Setup Instructions</h4>
+                    <p className="text-sm text-gray-600">Step-by-step guide to get the project running on your system</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircleIcon className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-medium text-gray-900">Future Updates</h4>
+                    <p className="text-sm text-gray-600">Access to improvements and bug fixes from the developer</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircleIcon className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-medium text-gray-900">Learning Resource</h4>
+                    <p className="text-sm text-gray-600">Learn {project.tags.slice(0, 2).join(' and ')} best practices from working code</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* How It Works - SEO Content */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">How PackCode Works</h2>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span className="text-purple-600 font-bold">1</span>
+                </div>
+                <h4 className="font-medium text-gray-900 mb-2">Browse & Preview</h4>
+                <p className="text-sm text-gray-600">Explore projects, view demos, and check documentation before purchasing</p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span className="text-purple-600 font-bold">2</span>
+                </div>
+                <h4 className="font-medium text-gray-900 mb-2">Secure Purchase</h4>
+                <p className="text-sm text-gray-600">One-click purchase with instant access to the complete project repository</p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span className="text-purple-600 font-bold">3</span>
+                </div>
+                <h4 className="font-medium text-gray-900 mb-2">Build & Deploy</h4>
+                <p className="text-sm text-gray-600">Download, customize, and deploy your own version with full ownership</p>
+              </div>
+            </div>
+          </div>
+
           {/* Author */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">About the Developer</h2>
@@ -493,46 +593,57 @@ const ProjectDetail: React.FC = () => {
               <div className="text-center">
                 {user ? (
                   <>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      ${project.license.price}
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                      ${buyerPrice}
                     </h3>
-                    <p className="text-gray-600 mb-4">One-time purchase</p>
-                    
-                    <div className="bg-gray-50 rounded-lg p-4 mb-6 text-sm">
-                      <div className="flex justify-between mb-2">
-                        <span className="text-gray-600">Price:</span>
-                        <span>${project.license.price.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-gray-600">Marketplace fee:</span>
-                        <span className="text-gray-600">-${marketplaceFee.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between font-medium pt-2 border-t">
-                        <span>Creator earns:</span>
-                        <span className="text-green-600">${sellerEarnings.toFixed(2)}</span>
-                      </div>
-                    </div>
+                    <p className="text-gray-600 mb-6">One-time purchase • Lifetime access</p>
 
                     <button
                       onClick={handlePurchaseClick}
                       className="w-full btn btn-primary flex items-center justify-center mb-4"
                     >
                       <ShoppingCartIcon className="w-4 h-4 mr-2" />
-                      Purchase Project
+                      Buy Now for ${buyerPrice}
                     </button>
+                    
+                    <div className="text-xs text-gray-500 mb-4">
+                      ✓ Instant access to full source code<br/>
+                      ✓ Commercial license included<br/>
+                      ✓ Support from creator
+                    </div>
                   </>
                 ) : (
                   <>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Premium Project</h3>
-                    <p className="text-gray-600 mb-6">Advanced features and commercial license available.</p>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">Premium Project</h3>
+                    <p className="text-gray-600 mb-4">Professional-grade {project.category} solution</p>
+                    
+                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4 mb-6">
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-gray-900 mb-2">What's Included</div>
+                        <div className="space-y-2 text-sm text-gray-700">
+                          <div className="flex items-center justify-center">
+                            <CheckCircleIcon className="w-4 h-4 text-green-500 mr-2" />
+                            Full source code & documentation
+                          </div>
+                          <div className="flex items-center justify-center">
+                            <CheckCircleIcon className="w-4 h-4 text-green-500 mr-2" />
+                            Commercial license included
+                          </div>
+                          <div className="flex items-center justify-center">
+                            <CheckCircleIcon className="w-4 h-4 text-green-500 mr-2" />
+                            Developer support & updates
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                     
                     <div className="space-y-3">
-                      <div className="w-full btn btn-primary flex items-center justify-center">
+                      <Link to="/login" className="w-full btn btn-primary flex items-center justify-center">
                         <LockClosedIcon className="w-4 h-4 mr-2" />
-                        Sign in to Purchase
-                      </div>
-                      <Link to="/login" className="text-sm text-purple-600 hover:text-purple-700">
-                        Create account to see pricing
+                        Sign in to View Price
+                      </Link>
+                      <Link to="/register" className="text-sm text-purple-600 hover:text-purple-700 text-center block">
+                        New to PackCode? Create free account
                       </Link>
                     </div>
                   </>
