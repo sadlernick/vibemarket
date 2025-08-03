@@ -184,9 +184,18 @@ Perfect for developers looking to learn from real-world implementations.`,
     } else {
       setFormData(prev => ({
         ...prev,
-        [name]: name === 'price' ? parseFloat(value) || 0 : value
+        [name]: name === 'price' ? handlePriceInput(value) : value
       }));
     }
+  };
+
+  const handlePriceInput = (value: string) => {
+    // Handle empty string
+    if (value === '') return 0;
+    
+    // Parse the value and return 0 for invalid numbers
+    const numValue = parseFloat(value);
+    return isNaN(numValue) ? 0 : numValue;
   };
 
   // Calculate pricing
@@ -533,9 +542,10 @@ Perfect for developers looking to learn from real-world implementations.`,
                       name="price"
                       min="0"
                       step="0.01"
-                      value={formData.price}
+                      value={formData.price === 0 ? '' : formData.price}
                       onChange={handleInputChange}
                       className="input pl-8"
+                      placeholder="0.00"
                     />
                   </div>
                   

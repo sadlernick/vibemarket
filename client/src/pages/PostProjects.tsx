@@ -157,9 +157,18 @@ const PostProjects: React.FC = () => {
     } else {
       setFormData(prev => ({
         ...prev,
-        [name]: name === 'price' ? parseFloat(value) || 0 : value
+        [name]: name === 'price' ? handlePriceInput(value) : value
       }));
     }
+  };
+
+  const handlePriceInput = (value: string) => {
+    // Handle empty string
+    if (value === '') return 0;
+    
+    // Parse the value and return 0 for invalid numbers
+    const numValue = parseFloat(value);
+    return isNaN(numValue) ? 0 : numValue;
   };
 
   const handleAIGenerate = async () => {
@@ -662,7 +671,7 @@ const PostProjects: React.FC = () => {
                       min="0"
                       step="0.01"
                       required={formData.licenseType === 'paid' || formData.licenseType === 'freemium'}
-                      value={formData.price}
+                      value={formData.price === 0 ? '' : formData.price}
                       onChange={handleInputChange}
                       className="input pl-8"
                       placeholder="0.00"
