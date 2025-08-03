@@ -51,6 +51,13 @@ const Home: React.FC = () => {
       <div className="bg-gradient-to-br from-purple-900 via-purple-800 to-blue-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
+            <div className="mb-8">
+              <img 
+                src="/pack-code-logo.png" 
+                alt="PackCode Logo" 
+                className="h-24 w-24 md:h-32 md:w-32 mx-auto animate-pulse"
+              />
+            </div>
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
               <span className="block bg-gradient-to-r from-yellow-400 to-pink-400 bg-clip-text text-transparent">
                 PackCode

@@ -43,7 +43,12 @@ const Navbar: React.FC = () => {
           <div className="flex items-center">
             {/* Logo */}
             <Link to="/" className="flex-shrink-0 flex items-center">
-              <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              <img 
+                src="/pack-code-logo.png" 
+                alt="PackCode" 
+                className="h-10 w-10 mr-2"
+              />
+              <span className="text-2xl font-bold text-gray-900">
                 PackCode
               </span>
             </Link>
